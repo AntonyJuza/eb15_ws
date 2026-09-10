@@ -1,0 +1,8 @@
+source;share/eb15_description/hook/cmake_prefix_path.ps1
+source;share/eb15_description/hook/cmake_prefix_path.dsv
+source;share/eb15_description/hook/cmake_prefix_path.sh
+source;share/eb15_description/local_setup.bash
+source;share/eb15_description/local_setup.dsv
+source;share/eb15_description/local_setup.ps1
+source;share/eb15_description/local_setup.sh
+source;share/eb15_description/local_setup.zsh

@@ -1,0 +1,181 @@
+[0.058s] [34mcolcon[0m [1;30mDEBUG[0m [32mCommand line arguments: ['/usr/bin/colcon', 'build', '--symlink-install'][0m
+[0.059s] [34mcolcon[0m [1;30mDEBUG[0m [32mParsed command line arguments: Namespace(log_base=None, log_level=None, verb_name='build', build_base='build', install_base='install', merge_install=False, symlink_install=True, test_result_base=None, continue_on_error=False, executor='parallel', parallel_workers=28, event_handlers=None, ignore_user_meta=False, metas=['./colcon.meta'], base_paths=['.'], packages_ignore=None, packages_ignore_regex=None, paths=None, packages_up_to=None, packages_up_to_regex=None, packages_above=None, packages_above_and_dependencies=None, packages_above_depth=None, packages_select_by_dep=None, packages_skip_by_dep=None, packages_skip_up_to=None, packages_select_build_failed=False, packages_skip_build_finished=False, packages_select_test_failures=False, packages_skip_test_passed=False, packages_select=None, packages_skip=None, packages_select_regex=None, packages_skip_regex=None, packages_start=None, packages_end=None, allow_overriding=[], cmake_args=None, cmake_target=None, cmake_target_skip_unavailable=False, cmake_clean_cache=False, cmake_clean_first=False, cmake_force_configure=False, ament_cmake_args=None, catkin_cmake_args=None, catkin_skip_building_tests=False, mixin_files=None, mixin=None, verb_parser=<colcon_mixin.mixin.mixin_argument.MixinArgumentDecorator object at 0x7dd232d86e10>, verb_extension=<colcon_core.verb.build.BuildVerb object at 0x7dd232ea3590>, main=<bound method BuildVerb.main of <colcon_core.verb.build.BuildVerb object at 0x7dd232ea3590>>, mixin_verb=('build',))[0m
+[0.096s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(colcon_meta) check parameters
+[0.096s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(recursive) check parameters
+[0.096s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(ignore) check parameters
+[0.096s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(path) check parameters
+[0.096s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(colcon_meta) discover
+[0.096s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(recursive) discover
+[0.096s] [34mcolcon.colcon_core.package_discovery[0m [1;30mINFO[0m Crawling recursively for packages in '/home/juza/eb15_ws'
+[0.096s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extensions ['ignore', 'ignore_ament_install']
+[0.097s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extension 'ignore'
+[0.097s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extension 'ignore_ament_install'
+[0.097s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extensions ['colcon_pkg']
+[0.097s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extension 'colcon_pkg'
+[0.097s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extensions ['colcon_meta']
+[0.097s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extension 'colcon_meta'
+[0.097s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extensions ['ros']
+[0.097s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extension 'ros'
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extensions ['cmake', 'python']
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extension 'cmake'
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extension 'python'
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extensions ['python_setup_py']
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extension 'python_setup_py'
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872) by extensions ['ignore', 'ignore_ament_install']
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872) by extension 'ignore'
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872) by extension 'ignore_ament_install'
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872) by extensions ['colcon_pkg']
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872) by extension 'colcon_pkg'
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872) by extensions ['colcon_meta']
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872) by extension 'colcon_meta'
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872) by extensions ['ros']
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872) by extension 'ros'
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872) by extensions ['cmake', 'python']
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872) by extension 'cmake'
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872) by extension 'python'
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872) by extensions ['python_setup_py']
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872) by extension 'python_setup_py'
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/files) by extensions ['ignore', 'ignore_ament_install']
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/files) by extension 'ignore'
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/files) by extension 'ignore_ament_install'
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/files) by extensions ['colcon_pkg']
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/files) by extension 'colcon_pkg'
+[0.123s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/files) by extensions ['colcon_meta']
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/files) by extension 'colcon_meta'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/files) by extensions ['ros']
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/files) by extension 'ros'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/files) by extensions ['cmake', 'python']
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/files) by extension 'cmake'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/files) by extension 'python'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/files) by extensions ['python_setup_py']
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/files) by extension 'python_setup_py'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/images) by extensions ['ignore', 'ignore_ament_install']
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/images) by extension 'ignore'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/images) by extension 'ignore_ament_install'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/images) by extensions ['colcon_pkg']
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/images) by extension 'colcon_pkg'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/images) by extensions ['colcon_meta']
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/images) by extension 'colcon_meta'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/images) by extensions ['ros']
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/images) by extension 'ros'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/images) by extensions ['cmake', 'python']
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/images) by extension 'cmake'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/images) by extension 'python'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/images) by extensions ['python_setup_py']
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(Collaborative Robot Arm EB-15 - 6488872/images) by extension 'python_setup_py'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(build) by extensions ['ignore', 'ignore_ament_install']
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(build) by extension 'ignore'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(build) ignored
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(install) by extensions ['ignore', 'ignore_ament_install']
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(install) by extension 'ignore'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(install) ignored
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(log) by extensions ['ignore', 'ignore_ament_install']
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(log) by extension 'ignore'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(log) ignored
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extensions ['ignore', 'ignore_ament_install']
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extension 'ignore'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extension 'ignore_ament_install'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extensions ['colcon_pkg']
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extension 'colcon_pkg'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extensions ['colcon_meta']
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extension 'colcon_meta'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extensions ['ros']
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extension 'ros'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extensions ['cmake', 'python']
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extension 'cmake'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extension 'python'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extensions ['python_setup_py']
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extension 'python_setup_py'
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src/eb15_description) by extensions ['ignore', 'ignore_ament_install']
+[0.124s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src/eb15_description) by extension 'ignore'
+[0.125s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src/eb15_description) by extension 'ignore_ament_install'
+[0.125s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src/eb15_description) by extensions ['colcon_pkg']
+[0.125s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src/eb15_description) by extension 'colcon_pkg'
+[0.125s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src/eb15_description) by extensions ['colcon_meta']
+[0.125s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src/eb15_description) by extension 'colcon_meta'
+[0.125s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src/eb15_description) by extensions ['ros']
+[0.125s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src/eb15_description) by extension 'ros'
+[0.126s] [34mcolcon.colcon_core.package_identification[0m [1;30mDEBUG[0m [32mPackage 'src/eb15_description' with type 'ros.ament_cmake' and name 'eb15_description'[0m
+[0.126s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(recursive) using defaults
+[0.126s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(ignore) discover
+[0.126s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(ignore) using defaults
+[0.126s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(path) discover
+[0.126s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(path) using defaults
+[0.134s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(prefix_path) check parameters
+[0.134s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(prefix_path) discover
+[0.135s] [34mcolcon.colcon_installed_package_information.package_discovery[0m [1;30mDEBUG[0m [32mFound 1 installed packages in /home/juza/eb15_ws/install[0m
+[0.136s] [34mcolcon.colcon_installed_package_information.package_discovery[0m [1;30mDEBUG[0m [32mFound 444 installed packages in /opt/ros/jazzy[0m
+[0.137s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(prefix_path) using defaults
+[0.162s] [34mcolcon.colcon_core.verb[0m [1;30mLevel 5[0m set package 'eb15_description' build argument 'cmake_args' from command line to 'None'
+[0.162s] [34mcolcon.colcon_core.verb[0m [1;30mLevel 5[0m set package 'eb15_description' build argument 'cmake_target' from command line to 'None'
+[0.162s] [34mcolcon.colcon_core.verb[0m [1;30mLevel 5[0m set package 'eb15_description' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.162s] [34mcolcon.colcon_core.verb[0m [1;30mLevel 5[0m set package 'eb15_description' build argument 'cmake_clean_cache' from command line to 'False'
+[0.162s] [34mcolcon.colcon_core.verb[0m [1;30mLevel 5[0m set package 'eb15_description' build argument 'cmake_clean_first' from command line to 'False'
+[0.162s] [34mcolcon.colcon_core.verb[0m [1;30mLevel 5[0m set package 'eb15_description' build argument 'cmake_force_configure' from command line to 'False'
+[0.162s] [34mcolcon.colcon_core.verb[0m [1;30mLevel 5[0m set package 'eb15_description' build argument 'ament_cmake_args' from command line to 'None'
+[0.162s] [34mcolcon.colcon_core.verb[0m [1;30mLevel 5[0m set package 'eb15_description' build argument 'catkin_cmake_args' from command line to 'None'
+[0.162s] [34mcolcon.colcon_core.verb[0m [1;30mLevel 5[0m set package 'eb15_description' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.162s] [34mcolcon.colcon_core.verb[0m [1;30mDEBUG[0m [32mBuilding package 'eb15_description' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/juza/eb15_ws/build/eb15_description', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/juza/eb15_ws/install/eb15_description', 'merge_install': False, 'path': '/home/juza/eb15_ws/src/eb15_description', 'symlink_install': True, 'test_result_base': None}[0m
+[0.162s] [34mcolcon.colcon_core.executor[0m [1;30mINFO[0m Executing jobs using 'parallel' executor
+[0.162s] [34mcolcon.colcon_parallel_executor.executor.parallel[0m [1;30mDEBUG[0m [32mrun_until_complete[0m
+[0.163s] [34mcolcon.colcon_ros.task.ament_cmake.build[0m [1;30mINFO[0m Building ROS package in '/home/juza/eb15_ws/src/eb15_description' with build type 'ament_cmake'
+[0.163s] [34mcolcon.colcon_cmake.task.cmake.build[0m [1;30mINFO[0m Building CMake package in '/home/juza/eb15_ws/src/eb15_description'
+[0.164s] [34mcolcon.colcon_core.plugin_system[0m [1;30mINFO[0m Skipping extension 'colcon_core.shell.bat': Not used on non-Windows systems
+[0.164s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.164s] [34mcolcon.colcon_core.shell[0m [1;30mDEBUG[0m [32mSkip shell extension 'dsv' for command environment[0m
+[0.170s] [34mcolcon.colcon_core.event_handler.log_command[0m [1;30mDEBUG[0m [32mInvoking command in '/home/juza/eb15_ws/build/eb15_description': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/juza/eb15_ws/build/eb15_description -- -j28 -l28[0m
+[0.201s] [34mcolcon.colcon_core.event_handler.log_command[0m [1;30mDEBUG[0m [32mInvoked command in '/home/juza/eb15_ws/build/eb15_description' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/juza/eb15_ws/build/eb15_description -- -j28 -l28[0m
+[0.206s] [34mcolcon.colcon_core.event_handler.log_command[0m [1;30mDEBUG[0m [32mInvoking command in '/home/juza/eb15_ws/build/eb15_description': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/juza/eb15_ws/build/eb15_description[0m
+[0.219s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m create_environment_scripts_only(eb15_description)
+[0.219s] [34mcolcon.colcon_core.event_handler.log_command[0m [1;30mDEBUG[0m [32mInvoked command in '/home/juza/eb15_ws/build/eb15_description' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/juza/eb15_ws/build/eb15_description[0m
+[0.220s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/juza/eb15_ws/install/eb15_description' for CMake module files
+[0.220s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/juza/eb15_ws/install/eb15_description' for CMake config files
+[0.221s] [34mcolcon.colcon_core.shell[0m [1;30mLevel 1[0m create_environment_hook('eb15_description', 'cmake_prefix_path')
+[0.221s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment hook '/home/juza/eb15_ws/install/eb15_description/share/eb15_description/hook/cmake_prefix_path.ps1'
+[0.221s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment descriptor '/home/juza/eb15_ws/install/eb15_description/share/eb15_description/hook/cmake_prefix_path.dsv'
+[0.221s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment hook '/home/juza/eb15_ws/install/eb15_description/share/eb15_description/hook/cmake_prefix_path.sh'
+[0.222s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/juza/eb15_ws/install/eb15_description/bin'
+[0.222s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/juza/eb15_ws/install/eb15_description/lib/pkgconfig/eb15_description.pc'
+[0.222s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/juza/eb15_ws/install/eb15_description/lib/python3.12/site-packages'
+[0.222s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/juza/eb15_ws/install/eb15_description/bin'
+[0.222s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating package script '/home/juza/eb15_ws/install/eb15_description/share/eb15_description/package.ps1'
+[0.222s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating package descriptor '/home/juza/eb15_ws/install/eb15_description/share/eb15_description/package.dsv'
+[0.222s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating package script '/home/juza/eb15_ws/install/eb15_description/share/eb15_description/package.sh'
+[0.223s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating package script '/home/juza/eb15_ws/install/eb15_description/share/eb15_description/package.bash'
+[0.223s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating package script '/home/juza/eb15_ws/install/eb15_description/share/eb15_description/package.zsh'
+[0.240s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m create_file_with_runtime_dependencies(/home/juza/eb15_ws/install/eb15_description/share/colcon-core/packages/eb15_description)
+[0.240s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m create_environment_scripts_only(eb15_description)
+[0.240s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/juza/eb15_ws/install/eb15_description' for CMake module files
+[0.240s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/juza/eb15_ws/install/eb15_description' for CMake config files
+[0.241s] [34mcolcon.colcon_core.shell[0m [1;30mLevel 1[0m create_environment_hook('eb15_description', 'cmake_prefix_path')
+[0.241s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment hook '/home/juza/eb15_ws/install/eb15_description/share/eb15_description/hook/cmake_prefix_path.ps1'
+[0.241s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment descriptor '/home/juza/eb15_ws/install/eb15_description/share/eb15_description/hook/cmake_prefix_path.dsv'
+[0.241s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment hook '/home/juza/eb15_ws/install/eb15_description/share/eb15_description/hook/cmake_prefix_path.sh'
+[0.241s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/juza/eb15_ws/install/eb15_description/bin'
+[0.241s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/juza/eb15_ws/install/eb15_description/lib/pkgconfig/eb15_description.pc'
+[0.241s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/juza/eb15_ws/install/eb15_description/lib/python3.12/site-packages'
+[0.241s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/juza/eb15_ws/install/eb15_description/bin'
+[0.242s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating package script '/home/juza/eb15_ws/install/eb15_description/share/eb15_description/package.ps1'
+[0.242s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating package descriptor '/home/juza/eb15_ws/install/eb15_description/share/eb15_description/package.dsv'
+[0.242s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating package script '/home/juza/eb15_ws/install/eb15_description/share/eb15_description/package.sh'
+[0.242s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating package script '/home/juza/eb15_ws/install/eb15_description/share/eb15_description/package.bash'
+[0.242s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating package script '/home/juza/eb15_ws/install/eb15_description/share/eb15_description/package.zsh'
+[0.242s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m create_file_with_runtime_dependencies(/home/juza/eb15_ws/install/eb15_description/share/colcon-core/packages/eb15_description)
+[0.243s] [34mcolcon.colcon_parallel_executor.executor.parallel[0m [1;30mDEBUG[0m [32mclosing loop[0m
+[0.243s] [34mcolcon.colcon_parallel_executor.executor.parallel[0m [1;30mDEBUG[0m [32mloop closed[0m
+[0.243s] [34mcolcon.colcon_parallel_executor.executor.parallel[0m [1;30mDEBUG[0m [32mrun_until_complete finished with '0'[0m
+[0.243s] [34mcolcon.colcon_core.event_reactor[0m [1;30mDEBUG[0m [32mjoining thread[0m
+[0.263s] [34mcolcon.colcon_core.plugin_system[0m [1;30mINFO[0m Skipping extension 'colcon_notification.desktop_notification.terminal_notifier': Not used on non-Darwin systems
+[0.263s] [34mcolcon.colcon_core.plugin_system[0m [1;30mINFO[0m Skipping extension 'colcon_notification.desktop_notification.win32': Not used on non-Windows systems
+[0.263s] [34mcolcon.colcon_notification.desktop_notification[0m [1;30mINFO[0m Sending desktop notification using 'notify2'
+[0.273s] [34mcolcon.colcon_core.event_reactor[0m [1;30mDEBUG[0m [32mjoined thread[0m
+[0.273s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating prefix script '/home/juza/eb15_ws/install/local_setup.ps1'
+[0.274s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating prefix util module '/home/juza/eb15_ws/install/_local_setup_util_ps1.py'
+[0.274s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating prefix chain script '/home/juza/eb15_ws/install/setup.ps1'
+[0.275s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating prefix script '/home/juza/eb15_ws/install/local_setup.sh'
+[0.275s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating prefix util module '/home/juza/eb15_ws/install/_local_setup_util_sh.py'
+[0.275s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating prefix chain script '/home/juza/eb15_ws/install/setup.sh'
+[0.276s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating prefix script '/home/juza/eb15_ws/install/local_setup.bash'
+[0.276s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating prefix chain script '/home/juza/eb15_ws/install/setup.bash'
+[0.276s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating prefix script '/home/juza/eb15_ws/install/local_setup.zsh'
+[0.277s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating prefix chain script '/home/juza/eb15_ws/install/setup.zsh'

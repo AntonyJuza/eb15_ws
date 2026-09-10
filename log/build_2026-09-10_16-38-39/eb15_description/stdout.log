@@ -1,0 +1,55 @@
+-- Found ament_cmake: 2.5.5 (/opt/ros/jazzy/share/ament_cmake/cmake)
+-- Override CMake install command with custom implementation using symlinks instead of copying resources
+-- Found ament_lint_auto: 0.17.4 (/opt/ros/jazzy/share/ament_lint_auto/cmake)
+-- Added test 'flake8' to check Python code syntax and style conventions
+-- Configured 'flake8' exclude dirs and/or files: 
+-- Added test 'lint_cmake' to check CMake code style
+-- Added test 'pep257' to check Python code against some of the docstring style conventions in PEP 257
+-- Added test 'xmllint' to check XML markup files
+-- Configuring done (0.3s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/juza/eb15_ws/build/eb15_description
+-- Install configuration: ""
+-- Execute custom install script
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/launch/display.launch.py
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/rviz/display.rviz
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/urdf/eb15.urdf
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/001.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/002.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/003.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/004.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/005.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/006.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/007.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/008.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/009.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/010.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/011.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/012.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/013.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/014.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/015.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/016.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/017.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/018.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/019.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/020.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/021.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/022.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/023.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/024.stl
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/ament_index/resource_index/package_run_dependencies/eb15_description
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/ament_index/resource_index/parent_prefix_path/eb15_description
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/environment/ament_prefix_path.sh
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/environment/ament_prefix_path.dsv
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/environment/path.sh
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/environment/path.dsv
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/local_setup.bash
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/local_setup.sh
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/local_setup.zsh
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/local_setup.dsv
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/package.dsv
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/ament_index/resource_index/packages/eb15_description
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/cmake/eb15_descriptionConfig.cmake
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/cmake/eb15_descriptionConfig-version.cmake
+-- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/package.xml

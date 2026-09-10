@@ -1,0 +1,61 @@
+[0.011s] Invoking command in '/home/juza/eb15_ws/build/eb15_description': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/juza/eb15_ws/src/eb15_description -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/juza/eb15_ws/install/eb15_description
+[0.019s] -- Found ament_cmake: 2.5.5 (/opt/ros/jazzy/share/ament_cmake/cmake)
+[0.255s] -- Override CMake install command with custom implementation using symlinks instead of copying resources
+[0.271s] -- Found ament_lint_auto: 0.17.4 (/opt/ros/jazzy/share/ament_lint_auto/cmake)
+[0.344s] -- Added test 'flake8' to check Python code syntax and style conventions
+[0.344s] -- Configured 'flake8' exclude dirs and/or files: 
+[0.345s] -- Added test 'lint_cmake' to check CMake code style
+[0.345s] -- Added test 'pep257' to check Python code against some of the docstring style conventions in PEP 257
+[0.346s] -- Added test 'xmllint' to check XML markup files
+[0.347s] -- Configuring done (0.3s)
+[0.383s] -- Generating done (0.0s)
+[0.386s] -- Build files have been written to: /home/juza/eb15_ws/build/eb15_description
+[0.392s] Invoked command in '/home/juza/eb15_ws/build/eb15_description' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/juza/eb15_ws/src/eb15_description -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/juza/eb15_ws/install/eb15_description
+[0.395s] Invoking command in '/home/juza/eb15_ws/build/eb15_description': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/juza/eb15_ws/build/eb15_description -- -j28 -l28
+[0.451s] Invoked command in '/home/juza/eb15_ws/build/eb15_description' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/juza/eb15_ws/build/eb15_description -- -j28 -l28
+[0.463s] Invoking command in '/home/juza/eb15_ws/build/eb15_description': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/juza/eb15_ws/build/eb15_description
+[0.471s] -- Install configuration: ""
+[0.471s] -- Execute custom install script
+[0.472s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/launch/display.launch.py
+[0.486s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/rviz/display.rviz
+[0.505s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/urdf/eb15.urdf
+[0.520s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/001.stl
+[0.534s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/002.stl
+[0.542s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/003.stl
+[0.551s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/004.stl
+[0.557s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/005.stl
+[0.567s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/006.stl
+[0.585s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/007.stl
+[0.601s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/008.stl
+[0.618s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/009.stl
+[0.628s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/010.stl
+[0.636s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/011.stl
+[0.643s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/012.stl
+[0.649s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/013.stl
+[0.657s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/014.stl
+[0.668s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/015.stl
+[0.680s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/016.stl
+[0.692s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/017.stl
+[0.708s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/018.stl
+[0.722s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/019.stl
+[0.730s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/020.stl
+[0.739s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/021.stl
+[0.744s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/022.stl
+[0.752s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/023.stl
+[0.764s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/meshes/024.stl
+[0.776s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/ament_index/resource_index/package_run_dependencies/eb15_description
+[0.792s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/ament_index/resource_index/parent_prefix_path/eb15_description
+[0.806s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/environment/ament_prefix_path.sh
+[0.818s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/environment/ament_prefix_path.dsv
+[0.831s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/environment/path.sh
+[0.842s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/environment/path.dsv
+[0.853s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/local_setup.bash
+[0.871s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/local_setup.sh
+[0.889s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/local_setup.zsh
+[0.906s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/local_setup.dsv
+[0.918s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/package.dsv
+[0.925s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/ament_index/resource_index/packages/eb15_description
+[0.934s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/cmake/eb15_descriptionConfig.cmake
+[0.949s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/cmake/eb15_descriptionConfig-version.cmake
+[0.964s] -- Symlinking: /home/juza/eb15_ws/install/eb15_description/share/eb15_description/package.xml
+[0.976s] Invoked command in '/home/juza/eb15_ws/build/eb15_description' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/juza/eb15_ws/build/eb15_description
