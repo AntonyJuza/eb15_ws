@@ -1,1 +1,0 @@
-/home/juza/eb15_ws/build/eb15_description/ament_cmake_environment_hooks/local_setup.zsh

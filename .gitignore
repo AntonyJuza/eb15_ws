@@ -1,0 +1,18 @@
+# ROS 2 Colcon build artifacts
+build/
+install/
+log/
+.colcon/
+
+# Python compiled bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Editor and IDE configurations
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
