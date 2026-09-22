@@ -184,6 +184,7 @@ $STATE,<j1_rad>,<j2_rad>,<j3_rad>,<lim_min>,<lim_max>,<cal_flag>
 | `/eb15/diagnostics` | `std_msgs/msg/String` | Published by Node | Firmware logs, calibration step counts, raw angles |
 | `/eb15/joint_commands` | `std_msgs/msg/Float64MultiArray` | Subscribed by Node | Commanded target positions for `[j1, j2, j3]` in radians |
 | `/eb15/home` | `std_msgs/msg/Empty` | Subscribed by Node | Trigger signal to initiate homing routine |
+| `/eb15/set_zero` | `std_msgs/msg/Empty` | Subscribed by Node | Overwrite current encoder positions as 0.0 rad (home) |
 
 ---
 

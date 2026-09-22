@@ -44,6 +44,14 @@ class EB15SerialBridge(Node):
             10
         )
 
+        # Zero offset trigger subscriber
+        self.zero_sub = self.create_subscription(
+            Empty,
+            '/eb15/set_zero',
+            self.set_zero_callback,
+            10
+        )
+
         # Serial Connection
         self.ser = None
         self.connect_serial()
@@ -117,6 +125,11 @@ class EB15SerialBridge(Node):
             self.ser.write(b'$HOME\n')
             self.get_logger().info('Sent $HOME command to Arduino')
 
+    def set_zero_callback(self, msg: Empty):
+        if self.ser and self.ser.is_open:
+            self.ser.write(b'$SET_ZERO\n')
+            self.get_logger().info('Sent $SET_ZERO command to Arduino')
+
 
 def main(args=None):
     rclpy.init(args=args)
@@ -129,7 +142,8 @@ def main(args=None):
         if node.ser and node.ser.is_open:
             node.ser.close()
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == '__main__':
