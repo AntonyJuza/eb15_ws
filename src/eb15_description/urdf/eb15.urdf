@@ -320,28 +320,28 @@
 
   <link name="wrist_base_link">
     <visual>
-      <origin xyz="0 0 0" rpy="1.5707963 0 0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
         <mesh filename="package://eb15_description/meshes/wrist_base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="light_white"/>
+      <material name="dark_gray"/>
     </visual>
     <collision>
-      <origin xyz="0 0 -0.003" rpy="0 0 0"/>
+      <origin xyz="0 0 0.037" rpy="0 0 0"/>
       <geometry>
-        <cylinder radius="0.028" length="0.026"/>
+        <box size="0.082 0.069 0.075"/>
       </geometry>
     </collision>
     <inertial>
-      <origin xyz="0 0 -0.003" rpy="0 0 0"/>
-      <mass value="0.08"/>
-      <inertia ixx="0.00005" ixy="0" ixz="0" iyy="0.00005" iyz="0" izz="0.00005"/>
+      <origin xyz="0 0 0.037" rpy="0 0 0"/>
+      <mass value="0.22"/>
+      <inertia ixx="0.0002" ixy="0" ixz="0" iyy="0.0002" iyz="0" izz="0.0002"/>
     </inertial>
   </link>
 
 
   <!-- ================================================= -->
-  <!-- WRIST JOINT (REVOLUTE WRIST ROLL - SERVO MG995)   -->
+  <!-- WRIST JOINT (REVOLUTE WRIST ROLL - SERVO HORN)    -->
   <!-- ================================================= -->
   <joint name="wrist_joint" type="revolute">
     <parent link="wrist_base_link"/>
@@ -354,42 +354,189 @@
 
   <link name="wrist_link">
     <visual>
-      <origin xyz="0 0 0" rpy="1.5707963 0 0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
         <mesh filename="package://eb15_description/meshes/wrist_rot.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="dark_gray"/>
+      <material name="light_white"/>
     </visual>
 
     <collision>
-      <origin xyz="0 0 0.036" rpy="0 0 0"/>
+      <origin xyz="0 0 0.073" rpy="0 0 0"/>
       <geometry>
-        <box size="0.082 0.069 0.075"/>
+        <cylinder radius="0.028" length="0.029"/>
       </geometry>
     </collision>
 
     <inertial>
-      <origin xyz="0 0 0.035" rpy="0 0 0"/>
-      <mass value="0.22"/>
-      <inertia ixx="0.0002" ixy="0" ixz="0" iyy="0.0002" iyz="0" izz="0.0002"/>
+      <origin xyz="0 0 0.073" rpy="0 0 0"/>
+      <mass value="0.08"/>
+      <inertia ixx="0.00005" ixy="0" ixz="0" iyy="0.00005" iyz="0" izz="0.00005"/>
     </inertial>
   </link>
 
 
   <!-- ================================================= -->
-  <!-- TOOL0 (END EFFECTOR FRAME AT TERMINATION OF WRIST) -->
+  <!-- TOOL0 (END EFFECTOR FRAME AT TOP OF SERVO HORN)   -->
   <!-- ================================================= -->
   <joint name="tool_joint" type="fixed">
     <parent link="wrist_link"/>
     <child link="tool0"/>
-    <origin xyz="0 0 0.0717" rpy="0 0 0"/>
+    <origin xyz="0 0 0.0877" rpy="0 0 0"/>
   </joint>
 
-  <link name="tool0">
+  <link name="tool0"/>
+
+  <!-- ================================================= -->
+  <!-- EBG-20 ADAPTIVE ROBOT GRIPPER                     -->
+  <!-- ================================================= -->
+  <!-- Fixed base attached directly to tool0 (002 collar mates to tool0) -->
+  <joint name="gripper_base_joint" type="fixed">
+    <parent link="tool0"/>
+    <child link="gripper_base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <link name="gripper_base_link">
+    <!-- Main Housing (002 + 003 + 015 Pinion) -->
     <visual>
-      <origin xyz="0 0 0.002" rpy="0 0 0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <cylinder radius="0.025" length="0.004"/>
+        <mesh filename="package://eb15_description/meshes/gripper_base.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="dark_gray"/>
+    </visual>
+    <!-- Front Cover Plate (004) -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://eb15_description/meshes/gripper_cover.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="light_white"/>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0.0385" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.085 0.065 0.077"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 0.0385" rpy="0 0 0"/>
+      <mass value="0.22"/>
+      <inertia ixx="0.00015" ixy="0" ixz="0" iyy="0.00018" iyz="0" izz="0.00012"/>
+    </inertial>
+  </link>
+
+
+  <!-- ================================================= -->
+  <!-- GRIPPER LEFT FINGER (010 + 011 + 007 + 008 + 009) -->
+  <!-- Prismatic joint sliding along X (inward to close) -->
+  <!-- ================================================= -->
+  <joint name="gripper_left_joint" type="prismatic">
+    <parent link="gripper_base_link"/>
+    <child link="gripper_left_finger_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="0.0" upper="0.020" effort="20.0" velocity="0.05"/>
+    <dynamics damping="0.5" friction="0.1"/>
+  </joint>
+
+  <link name="gripper_left_finger_link">
+    <!-- Finger Body & Rack (010 + 011 + 007 + 008) -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://eb15_description/meshes/gripper_left_finger.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="dark_gray"/>
+    </visual>
+    <!-- White Grip Pad (009) -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://eb15_description/meshes/gripper_left_pad.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="light_white"/>
+    </visual>
+
+    <collision>
+      <origin xyz="-0.020 0 0.098" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.015 0.021 0.040"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="-0.015 0 0.088" rpy="0 0 0"/>
+      <mass value="0.04"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+  </link>
+
+
+  <!-- ================================================== -->
+  <!-- GRIPPER RIGHT FINGER (005 + 006 + 012 + 013 + 014) -->
+  <!-- Prismatic joint sliding along -X (mimics left)     -->
+  <!-- ================================================== -->
+  <joint name="gripper_right_joint" type="prismatic">
+    <parent link="gripper_base_link"/>
+    <child link="gripper_right_finger_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="-1 0 0"/>
+    <limit lower="0.0" upper="0.020" effort="20.0" velocity="0.05"/>
+    <mimic joint="gripper_left_joint" multiplier="1.0" offset="0.0"/>
+    <dynamics damping="0.5" friction="0.1"/>
+  </joint>
+
+  <link name="gripper_right_finger_link">
+    <!-- Finger Body & Rack (005 + 006 + 012 + 013) -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://eb15_description/meshes/gripper_right_finger.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="dark_gray"/>
+    </visual>
+    <!-- White Grip Pad (014) -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://eb15_description/meshes/gripper_right_pad.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="light_white"/>
+    </visual>
+
+    <collision>
+      <origin xyz="0.020 0 0.098" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.015 0.021 0.040"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0.015 0 0.088" rpy="0 0 0"/>
+      <mass value="0.04"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+  </link>
+
+
+  <!-- ================================================= -->
+  <!-- GRIPPER TCP (TOOL CENTER POINT / GRASP FRAME)     -->
+  <!-- ================================================= -->
+  <joint name="gripper_tcp_joint" type="fixed">
+    <parent link="gripper_base_link"/>
+    <child link="gripper_tcp"/>
+    <origin xyz="0 0 0.098" rpy="0 0 0"/>
+  </joint>
+
+  <link name="gripper_tcp">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="0.004"/>
       </geometry>
       <material name="accent_red"/>
     </visual>

@@ -14,7 +14,7 @@ class EB15SerialBridge(Node):
         # Declare parameters
         self.declare_parameter('serial_port', '/dev/ttyUSB0')
         self.declare_parameter('baud_rate', 115200)
-        self.declare_parameter('joint_names', ['joint1', 'joint2', 'joint3'])
+        self.declare_parameter('joint_names', ['joint1', 'joint2', 'joint3', 'wrist_joint', 'gripper_left_joint'])
 
         self.port_name = self.get_parameter('serial_port').get_parameter_value().string_value
         self.baud_rate = self.get_parameter('baud_rate').get_parameter_value().integer_value

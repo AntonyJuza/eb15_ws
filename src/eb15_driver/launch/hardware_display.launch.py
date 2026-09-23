@@ -52,7 +52,7 @@ def generate_launch_description():
         parameters=[{
             'serial_port': LaunchConfiguration('serial_port'),
             'baud_rate': LaunchConfiguration('baud_rate'),
-            'joint_names': ['joint1', 'joint2', 'joint3', 'wrist_joint'],
+            'joint_names': ['joint1', 'joint2', 'joint3', 'wrist_joint', 'gripper_left_joint'],
         }]
     )
 
