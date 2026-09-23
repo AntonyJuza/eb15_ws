@@ -390,11 +390,11 @@
   <!-- ================================================= -->
   <!-- EBG-20 ADAPTIVE ROBOT GRIPPER                     -->
   <!-- ================================================= -->
-  <!-- Fixed base attached directly to tool0 (002 collar mates to tool0) -->
+  <!-- Fixed base attached to tool0: wrist piece inserts 9.5mm into collar of 002 -->
   <joint name="gripper_base_joint" type="fixed">
     <parent link="tool0"/>
     <child link="gripper_base_link"/>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <origin xyz="0 0 -0.0095" rpy="0 0 0"/>
   </joint>
 
   <link name="gripper_base_link">
