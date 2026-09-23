@@ -107,7 +107,10 @@ class EB15SerialBridge(Node):
                 msg = JointState()
                 msg.header.stamp = self.get_clock().now().to_msg()
                 msg.name = self.joint_names
-                msg.position = [q1, q2, q3]
+                positions = [q1, q2, q3]
+                while len(positions) < len(self.joint_names):
+                    positions.append(0.0)
+                msg.position = positions
                 self.joint_pub.publish(msg)
 
             except ValueError as e:

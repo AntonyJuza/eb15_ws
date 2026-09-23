@@ -83,7 +83,8 @@ The primary goal of this project is to transform a desktop 3D-printable robotic 
 - **Joint 1 (Base Pan / Yaw)**: Revolute Z-axis `[-π, +π]`, driven by NEMA 17 with EBA-17 planetary gearbox.
 - **Joint 2 (Shoulder Pitch)**: Revolute Y-axis `[-π, +π]` (physical limit: 0° to 180°), driven by NEMA 17 with EBA-17-S high-torque planetary gearbox.
 - **Joint 3 (Elbow Pitch)**: Revolute Y-axis `[-π, +π]`, mounted on link2 upper arm.
-- **Tool Flange (`tool0`)**: Fixed frame at forearm termination (Z = 0.178m from elbow axis) for gripper attachment.
+- **Wrist Link (`wrist_link`)**: Custom servo-driven wrist module (MG995) mounting flush onto the forearm tube at Z = 0.178m.
+- **Tool Flange (`tool0`)**: End-effector mounting frame at wrist termination (Z = 0.2497m / 71.7mm above wrist base) for gripper attachment.
 
 ### Electronics & Actuation
 - **Microcontroller**: Arduino Nano (ATmega328P).
