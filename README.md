@@ -82,7 +82,7 @@ The primary goal of this project is to transform a desktop 3D-printable robotic 
 - **Base Fixture**: Rigid base link with 001 base plate and 002 thrust washer.
 - **Joint 1 (Base Pan / Yaw)**: Revolute Z-axis `[-π, +π]`, driven by NEMA 17 with EBA-17 planetary gearbox.
 - **Joint 2 (Shoulder Pitch)**: Revolute Y-axis `[-π, +π]` (physical limit: 0° to 180°), driven by NEMA 17 with EBA-17-S high-torque planetary gearbox.
-- **Joint 3 (Elbow Pitch)**: Revolute Y-axis `[-π, +π]`, mounted on link2 upper arm.
+- **Joint 3 (Elbow Pitch)**: Revolute Y-axis `[-2.700, +2.700] rad` (`±154.7°`), constrained by dual limit switches to avoid collision with the base.
 - **Wrist Link (`wrist_link`)**: Custom servo-driven wrist module (MG995) mounting flush onto the forearm tube at Z = 0.178m.
 - **Tool Flange (`tool0`)**: End-effector mounting frame at wrist termination (Z = 0.2497m / 71.7mm above wrist base) for gripper attachment.
 
@@ -90,7 +90,12 @@ The primary goal of this project is to transform a desktop 3D-printable robotic 
 - **Microcontroller**: Arduino Nano (ATmega328P).
 - **Motor Drivers**: 3x TB6600 Microstep Drivers configured for 1/8 or 1/16 microstepping.
 - **Motors**: 3x NEMA 17 Stepper Motors (42BYGH series).
-- **Limit Switches**: 2x Mechanical snap-action microswitches mounted at MIN (0°) and MAX (180°) positions of the Joint 2 arc.
+- **Limit Switches**: 4x Mechanical snap-action microswitches:
+  - 2x Joint 2 Shoulder (D3 = MIN 0°, D2 = MAX 180°)
+  - 2x Joint 3 Elbow (A1 = MIN -2.700 rad, A2 = MAX +2.700 rad)
+- **Servos**: 2x MG995 Servomotors:
+  - D13 = Wrist Roll Servo
+  - A0 = EBG-20 Gripper Servo
 
 ### Sensors & Feedback
 - **Magnetic Rotary Encoders**: 3x AS5600 12-bit contactless encoders (`0.087°` resolution).
@@ -115,6 +120,10 @@ The primary goal of this project is to transform a desktop 3D-printable robotic 
 | **D10**| Motor 3 (Joint 3 Elbow) - STEP | TB6600 #3 `PUL+` / `PUL` | Digital Output | Pulse train |
 | **D11**| Motor 3 (Joint 3 Elbow) - DIR | TB6600 #3 `DIR+` / `DIR` | Digital Output | Direction level |
 | **D12**| Motor 3 (Joint 3 Elbow) - ENA | TB6600 #3 `ENA+` / `ENA` | Digital Output | Active LOW enable |
+| **D13**| Wrist Roll Servo (MG995) | Servo Signal PWM | Digital Output | 50 Hz PWM |
+| **A0** | EBG-20 Gripper Servo (MG995) | Servo Signal PWM | Digital Output | 50 Hz PWM |
+| **A1** | Elbow Limit Switch MIN (-2.700 rad) | Limit Switch COM / NO | Digital Input | Internal Pull-Up (`INPUT_PULLUP`, Active LOW) |
+| **A2** | Elbow Limit Switch MAX (+2.700 rad) | Limit Switch COM / NO | Digital Input | Internal Pull-Up (`INPUT_PULLUP`, Active LOW) |
 | **A4** | I2C SDA | TCA9548A SDA | I2C Bus | 400 kHz Fast-Mode |
 | **A5** | I2C SCL | TCA9548A SCL | I2C Bus | 400 kHz Fast-Mode |
 | **5V / GND** | Logic Power | TB6600 Signal GND, TCA9548A, Encoders | Power | 5V rail |

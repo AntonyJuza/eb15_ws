@@ -94,15 +94,17 @@ class EB15SerialBridge(Node):
             self.ser = None
 
     def parse_and_publish_state(self, line):
-        # Format: $STATE,<j1>,<j2>,<j3>,<lim_min>,<lim_max>
+        # Format: $STATE,<j1>,<j2>,<j3>,<sh_min>,<sh_max>[,<el_min>,<el_max>,<cal_flag>]
         parts = line.split(',')
         if len(parts) >= 6:
             try:
                 q1 = float(parts[1])
                 q2 = float(parts[2])
                 q3 = float(parts[3])
-                lim_min = int(parts[4])
-                lim_max = int(parts[5])
+                sh_min = int(parts[4])
+                sh_max = int(parts[5])
+                el_min = int(parts[6]) if len(parts) >= 8 else 0
+                el_max = int(parts[7]) if len(parts) >= 8 else 0
 
                 msg = JointState()
                 msg.header.stamp = self.get_clock().now().to_msg()

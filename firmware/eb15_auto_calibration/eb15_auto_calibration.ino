@@ -1,35 +1,35 @@
 /**
- * EB-15 Robotic Arm - Auto-Calibration Firmware
- * ================================================
+ * EB-15 Robotic Arm - Dual-Joint Auto-Calibration Firmware
+ * =======================================================
  * 
- * Shoulder (Joint 2) automatic calibration using dual limit switches.
+ * Automatic calibration for:
+ *  - Shoulder (Joint 2): Dual limit switches on D3 (0°) and D2 (180°)
+ *  - Elbow (Joint 3):    Dual limit switches on A1 (-2.700 rad) and A2 (+2.700 rad)
  * 
- * Calibration Sequence (runs automatically at power-on):
+ * Calibration Sequence for each joint:
  *  1. Move toward MIN limit switch until triggered
- *  2. Back off from MIN switch, record encoder → this is 0°
+ *  2. Back off from MIN switch, record encoder at MIN limit
  *  3. Traverse toward MAX limit switch, counting steps
- *  4. Back off from MAX switch, record encoder → this is 180°
+ *  4. Back off from MAX switch, record encoder at MAX limit
  *  5. Compute encoder offset & direction mapping
- *  6. Return to 90° (home / midpoint) position
- *  7. Re-zero encoder so 90° reads as 0.0 rad
- *  7. Begin normal telemetry & command operation
+ *  6. Return to midpoint position (URDF 0.0 rad home)
+ *  7. Re-zero encoder so midpoint reads exactly 0.0 rad
  * 
  * Hardware:
  *  - 3x NEMA 17 Steppers with TB6600 Drivers
  *  - 3x AS5600 Magnetic Encoders via TCA9548A I2C Multiplexer
  *  - 2x Shoulder Limit Switches (MIN at D3, MAX at D2)
+ *  - 2x Elbow Limit Switches (MIN at A1, MAX at A2)
+ *  - 2x Servos (Wrist Roll at D13, Gripper at A0)
  * 
  * Communication (USB Serial @ 115200 baud):
- *  - Telemetry:  $STATE,<j1_rad>,<j2_rad>,<j3_rad>,<lim_min>,<lim_max>,<cal>
+ *  - Telemetry:  $STATE,<j1_rad>,<j2_rad>,<j3_rad>,<sh_min>,<sh_max>,<el_min>,<el_max>,<cal>
  *  - Commands:   $CMD,<j1_rad>,<j2_rad>,<j3_rad>
- *                $HOME       (re-run full auto-calibration)
- *                $SET_ZERO   (set current encoder readings as zero)
- *                $STATUS     (print calibration diagnostics)
- *
- * NOTE: This is a TEST file. Upload this INSTEAD of eb15_arduino.ino.
- *       Do NOT have both .ino files in the same Arduino sketch folder.
- *       Copy this file to a separate folder to compile, e.g.:
- *         firmware/eb15_auto_cal/eb15_auto_calibration.ino
+ *                $HOME          (re-run full dual auto-calibration)
+ *                $HOME_SHOULDER (re-run shoulder calibration only)
+ *                $HOME_ELBOW    (re-run elbow calibration only)
+ *                $SET_ZERO      (set current encoder readings as zero)
+ *                $STATUS        (print calibration diagnostics)
  */
 
 #include <Wire.h>
@@ -38,10 +38,18 @@
 //  PIN DEFINITIONS
 // ═══════════════════════════════════════════════════════════════
 
-// Shoulder Limit Switches (Active LOW with internal pull-up)
-#define SHOULDER_LIMIT_MIN_PIN   3   // Pin D3 — Home / 0° end
-#define SHOULDER_LIMIT_MAX_PIN   2   // Pin D2 — Far / 180° end
+// Shoulder (Joint 2) Limit Switches (Active LOW with internal pull-up)
+#define SHOULDER_LIMIT_MIN_PIN   3   // Pin D3 — Home / 0° end (-1.5708 rad URDF)
+#define SHOULDER_LIMIT_MAX_PIN   2   // Pin D2 — Far / 180° end (+1.5708 rad URDF)
+
+// Elbow (Joint 3) Limit Switches (Active LOW with internal pull-up)
+#define ELBOW_LIMIT_MIN_PIN      A1  // Pin A1 — Folded / -2.700 rad limit
+#define ELBOW_LIMIT_MAX_PIN      A2  // Pin A2 — Extended / +2.700 rad limit
 #define LIMIT_SWITCH_ACTIVE_LOW  true
+
+// Servos (Wrist Roll & Gripper)
+#define WRIST_SERVO_PIN          13  // Pin D13 (Wrist Roll Servo)
+#define GRIPPER_SERVO_PIN        A0  // Pin A0 / D14 (EBG-20 Gripper Servo)
 
 // TB6600 Motor 1 (Joint 1 / Base Yaw)
 #define STEP_PIN_1               4
@@ -58,17 +66,24 @@
 #define DIR_PIN_3                11
 #define ENA_PIN_3                12
 
-// TB6600 Enable levels (typically LOW = enabled on TB6600)
+// TB6600 Enable levels (LOW = enabled on TB6600)
 #define TB6600_ENABLE_LEVEL      LOW
 #define TB6600_DISABLE_LEVEL     HIGH
 
 // ═══════════════════════════════════════════════════════════════
-//  SHOULDER DIRECTION MAPPING
-//  If the motor moves the WRONG way during calibration,
-//  swap these two values.
+//  MOTOR DIRECTION MAPPING
+//  If a motor moves the WRONG way during calibration,
+//  swap these LOW and HIGH values.
 // ═══════════════════════════════════════════════════════════════
 #define SHOULDER_DIR_TOWARD_MIN  LOW
 #define SHOULDER_DIR_TOWARD_MAX  HIGH
+
+#define ELBOW_DIR_TOWARD_MIN     LOW
+#define ELBOW_DIR_TOWARD_MAX     HIGH
+
+// Joint 3 Physical Calibration Limits (radians)
+const float J3_LIMIT_MIN_RAD = -2.700f;
+const float J3_LIMIT_MAX_RAD =  2.700f;
 
 // ═══════════════════════════════════════════════════════════════
 //  CALIBRATION PARAMETERS
@@ -77,7 +92,7 @@
 #define BACKOFF_STEPS            200    // Steps to back off after hitting a switch
 #define BACKOFF_SPEED_US         1000   // Slightly slower for back-off
 #define HOMING_TIMEOUT_MS        20000  // 20 sec timeout per phase
-#define TRAVERSE_TIMEOUT_MS      30000  // 30 sec timeout for MIN→MAX traverse
+#define TRAVERSE_TIMEOUT_MS      35000  // 35 sec timeout for MIN→MAX traverse
 
 // ═══════════════════════════════════════════════════════════════
 //  I2C MULTIPLEXER & ENCODER SETTINGS
@@ -98,15 +113,21 @@ int8_t   encoder_directions[NUM_JOINTS] = {1, 1, 1};
 float    joint_positions[NUM_JOINTS]    = {0.0, 0.0, 0.0};
 float    target_positions[NUM_JOINTS]   = {0.0, 0.0, 0.0};
 
-bool     calibration_ok       = false;    // True after successful calibration
-uint16_t raw_at_min_pos       = 0;        // Encoder raw at 0° (after back-off)
-uint16_t raw_at_max_pos       = 0;        // Encoder raw at 180° (after back-off)
-unsigned long total_shoulder_steps = 0;   // Steps between 0° and 180° positions
+// Shoulder calibration state
+bool     shoulder_cal_ok       = false;
+uint16_t raw_at_sh_min         = 0;
+uint16_t raw_at_sh_max         = 0;
+unsigned long total_sh_steps   = 0;
+
+// Elbow calibration state
+bool     elbow_cal_ok          = false;
+uint16_t raw_at_el_min         = 0;
+uint16_t raw_at_el_max         = 0;
+unsigned long total_el_steps   = 0;
 
 // Telemetry timer (20 Hz = 50ms)
 unsigned long last_telemetry_time = 0;
 const unsigned long TELEMETRY_INTERVAL_MS = 50;
-
 
 // ═══════════════════════════════════════════════════════════════
 //  HELPER: Select TCA9548A I2C Channel
@@ -157,6 +178,14 @@ bool isShoulderMaxHit() {
   return digitalRead(SHOULDER_LIMIT_MAX_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH);
 }
 
+bool isElbowMinHit() {
+  return digitalRead(ELBOW_LIMIT_MIN_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH);
+}
+
+bool isElbowMaxHit() {
+  return digitalRead(ELBOW_LIMIT_MAX_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH);
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  MOTOR CONTROL HELPERS
 // ═══════════════════════════════════════════════════════════════
@@ -173,243 +202,211 @@ void stepMotor(uint8_t step_pin) {
   digitalWrite(step_pin, LOW);
 }
 
-
 // ═══════════════════════════════════════════════════════════════
-//  AUTO-CALIBRATION ROUTINE
+//  SHOULDER (JOINT 2) AUTO-CALIBRATION
 // ═══════════════════════════════════════════════════════════════
 void autoCalibrateShoulder() {
   Serial.println(F(""));
   Serial.println(F("# =========================================="));
-  Serial.println(F("#  EB-15 SHOULDER AUTO-CALIBRATION"));
+  Serial.println(F("#  SHOULDER (JOINT 2) AUTO-CALIBRATION"));
   Serial.println(F("# =========================================="));
 
-  calibration_ok = false;
+  shoulder_cal_ok = false;
   enableMotors(true);
   delay(100);
 
-  // ── PHASE 1: Find MIN limit switch (0° end) ──────────────
-
-  Serial.println(F("# Phase 1: Seeking MIN limit switch..."));
-
-  // Check if we're already sitting on a switch
-  if (isShoulderMinHit()) {
-    Serial.println(F("#   Already on MIN switch."));
-  }
-  else {
-    // If we happen to be sitting on MAX, move away from it first
-    if (isShoulderMaxHit()) {
-      Serial.println(F("#   Currently on MAX switch, moving toward MIN..."));
-    }
-
-    // Move toward MIN
+  // Phase 1: Seek MIN limit switch
+  Serial.println(F("# [J2] Phase 1: Seeking MIN limit switch (D3)..."));
+  if (!isShoulderMinHit()) {
     digitalWrite(DIR_PIN_2, SHOULDER_DIR_TOWARD_MIN);
     unsigned long timeout = millis() + HOMING_TIMEOUT_MS;
-
     while (!isShoulderMinHit() && millis() < timeout) {
       stepMotor(STEP_PIN_2);
       delayMicroseconds(HOMING_SPEED_US);
     }
-
     if (!isShoulderMinHit()) {
-      Serial.println(F("# ERROR: MIN limit switch not found! Aborting."));
-      Serial.println(F("#   Check wiring on pin D3."));
+      Serial.println(F("# [J2] ERROR: MIN limit switch not reached! Check wiring on D3."));
       return;
     }
   }
 
-  Serial.println(F("#   MIN limit switch FOUND."));
-
-  // Back off from MIN switch
-  Serial.println(F("#   Backing off from MIN..."));
+  Serial.println(F("# [J2]   MIN limit reached. Backing off..."));
   digitalWrite(DIR_PIN_2, SHOULDER_DIR_TOWARD_MAX);
   for (int i = 0; i < BACKOFF_STEPS; i++) {
     stepMotor(STEP_PIN_2);
     delayMicroseconds(BACKOFF_SPEED_US);
   }
-  delay(300);  // Settle time for encoder
+  delay(300);
+  raw_at_sh_min = readAS5600RawAngle(ENCODER_CHANNELS[1]);
+  Serial.print(F("# [J2]   Encoder raw at MIN (0 deg): "));
+  Serial.println(raw_at_sh_min);
 
-  // Verify we're clear of the switch
-  if (isShoulderMinHit()) {
-    Serial.println(F("# WARNING: Still on MIN switch after back-off. Increasing back-off..."));
-    for (int i = 0; i < BACKOFF_STEPS; i++) {
-      stepMotor(STEP_PIN_2);
-      delayMicroseconds(BACKOFF_SPEED_US);
-    }
-    delay(300);
-  }
-
-  // Record encoder at 0° position
-  raw_at_min_pos = readAS5600RawAngle(ENCODER_CHANNELS[1]);
-  Serial.print(F("#   Encoder at 0° position: "));
-  Serial.println(raw_at_min_pos);
-
-
-  // ── PHASE 2: Traverse to MAX limit switch (180° end) ──────
-
-  Serial.println(F("# Phase 2: Traversing to MAX limit switch..."));
+  // Phase 2: Traverse to MAX limit switch
+  Serial.println(F("# [J2] Phase 2: Traversing to MAX limit switch (D2)..."));
   digitalWrite(DIR_PIN_2, SHOULDER_DIR_TOWARD_MAX);
-
   unsigned long step_count = 0;
   unsigned long timeout2 = millis() + TRAVERSE_TIMEOUT_MS;
-
   while (!isShoulderMaxHit() && millis() < timeout2) {
     stepMotor(STEP_PIN_2);
     delayMicroseconds(HOMING_SPEED_US);
     step_count++;
   }
-
   if (!isShoulderMaxHit()) {
-    Serial.println(F("# ERROR: MAX limit switch not found! Aborting."));
-    Serial.println(F("#   Check wiring on pin D2."));
+    Serial.println(F("# [J2] ERROR: MAX limit switch not reached! Check wiring on D2."));
     return;
   }
 
-  Serial.print(F("#   MAX limit switch FOUND after "));
+  Serial.print(F("# [J2]   MAX limit reached after "));
   Serial.print(step_count);
-  Serial.println(F(" steps."));
-
-  // Back off from MAX switch
-  Serial.println(F("#   Backing off from MAX..."));
+  Serial.println(F(" steps. Backing off..."));
   digitalWrite(DIR_PIN_2, SHOULDER_DIR_TOWARD_MIN);
   for (int i = 0; i < BACKOFF_STEPS; i++) {
     stepMotor(STEP_PIN_2);
     delayMicroseconds(BACKOFF_SPEED_US);
   }
-  delay(300);  // Settle time for encoder
+  delay(300);
+  raw_at_sh_max = readAS5600RawAngle(ENCODER_CHANNELS[1]);
+  total_sh_steps = step_count;
+  Serial.print(F("# [J2]   Encoder raw at MAX (180 deg): "));
+  Serial.println(raw_at_sh_max);
 
-  // Verify we're clear of the switch
-  if (isShoulderMaxHit()) {
-    Serial.println(F("# WARNING: Still on MAX switch after back-off. Increasing back-off..."));
-    for (int i = 0; i < BACKOFF_STEPS; i++) {
-      stepMotor(STEP_PIN_2);
-      delayMicroseconds(BACKOFF_SPEED_US);
-    }
-    delay(300);
-  }
-
-  // Record encoder at 180° position
-  raw_at_max_pos = readAS5600RawAngle(ENCODER_CHANNELS[1]);
-  Serial.print(F("#   Encoder at 180° position: "));
-  Serial.println(raw_at_max_pos);
-
-  // Save total steps for the usable range
-  total_shoulder_steps = step_count;
-
-
-  // ── PHASE 3: Compute encoder calibration ──────────────────
-
-  Serial.println(F("# Phase 3: Computing calibration..."));
-
-  // Determine encoder direction:
-  // Does increasing raw angle correspond to MIN→MAX (0°→180°)?
-  int16_t raw_diff = (int16_t)raw_at_max_pos - (int16_t)raw_at_min_pos;
-  // Handle 12-bit wrap-around
+  // Phase 3: Compute calibration
+  int16_t raw_diff = (int16_t)raw_at_sh_max - (int16_t)raw_at_sh_min;
   if (raw_diff > 2048)  raw_diff -= 4096;
   if (raw_diff < -2048) raw_diff += 4096;
-
   encoder_directions[1] = (raw_diff > 0) ? 1 : -1;
-  encoder_offsets[1]     = rawAngleToRadians(raw_at_min_pos);
 
-  Serial.print(F("#   Encoder raw range:  "));
-  Serial.print(raw_at_min_pos);
-  Serial.print(F(" -> "));
-  Serial.println(raw_at_max_pos);
-  Serial.print(F("#   Raw difference:     "));
-  Serial.println(raw_diff);
-  Serial.print(F("#   Encoder direction:  "));
-  Serial.println(encoder_directions[1] > 0 ? "POSITIVE" : "NEGATIVE");
-  Serial.print(F("#   Encoder offset:     "));
-  Serial.print(encoder_offsets[1], 4);
-  Serial.println(F(" rad"));
-  Serial.print(F("#   Total range steps:  "));
-  Serial.println(total_shoulder_steps);
-
-  float deg_per_step = 180.0 / (float)total_shoulder_steps;
-  Serial.print(F("#   Resolution:         "));
-  Serial.print(deg_per_step, 5);
-  Serial.println(F(" deg/step"));
-
-
-  // ── PHASE 4: Return to 90° (midpoint / home) position ────
-
-  Serial.println(F("# Phase 4: Returning to 90 deg (midpoint)..."));
-  digitalWrite(DIR_PIN_2, SHOULDER_DIR_TOWARD_MIN);
-
-  // We are currently at (MAX - BACKOFF) position.
-  // The 0° position is at (MIN + BACKOFF).
-  // The usable range = step_count - BACKOFF_STEPS.
-  // Midpoint (90°) = halfway through the usable range.
-  //
-  // Current distance from 0° = step_count - BACKOFF_STEPS
-  // Target distance from 0°  = (step_count - BACKOFF_STEPS) / 2
-  // Steps to move toward MIN = current - target = (step_count - BACKOFF_STEPS) / 2
+  // Phase 4: Return to 90° (midpoint / URDF 0.0 rad)
   unsigned long usable_range = step_count - BACKOFF_STEPS;
   unsigned long return_steps = usable_range / 2;
-
-  Serial.print(F("#   Usable range: "));
-  Serial.print(usable_range);
-  Serial.println(F(" steps"));
-  Serial.print(F("#   Moving "));
+  Serial.print(F("# [J2] Phase 4: Returning "));
   Serial.print(return_steps);
-  Serial.println(F(" steps toward MIN to reach 90 deg..."));
-
+  Serial.println(F(" steps to 90 deg midpoint..."));
+  digitalWrite(DIR_PIN_2, SHOULDER_DIR_TOWARD_MIN);
   for (unsigned long i = 0; i < return_steps; i++) {
-    // Safety: stop if MIN switch is hit (shouldn't happen at midpoint)
-    if (isShoulderMinHit()) {
-      Serial.println(F("#   Hit MIN switch during return! Backing off..."));
-      digitalWrite(DIR_PIN_2, SHOULDER_DIR_TOWARD_MAX);
-      for (int j = 0; j < BACKOFF_STEPS; j++) {
-        stepMotor(STEP_PIN_2);
-        delayMicroseconds(BACKOFF_SPEED_US);
-      }
-      break;
-    }
+    if (isShoulderMinHit()) break;
     stepMotor(STEP_PIN_2);
     delayMicroseconds(HOMING_SPEED_US);
   }
+  delay(300);
 
-  delay(300);  // Settle
-
-
-  // ── PHASE 5: Re-zero encoder at 90° and verify ────────────
-  //    Set the encoder offset so that THIS position (90° physical)
-  //    reads as 0.0 rad. The joint will then range from
-  //    -PI/2 (-90°) to +PI/2 (+90°) in URDF coordinates.
-
-  uint16_t raw_at_midpoint = readAS5600RawAngle(ENCODER_CHANNELS[1]);
-  encoder_offsets[1] = rawAngleToRadians(raw_at_midpoint);
-
-  // Verify: should now read ~0.0
-  float final_rad = (rawAngleToRadians(raw_at_midpoint) - encoder_offsets[1]) * encoder_directions[1];
-  float final_deg = final_rad * 180.0 / PI;
-
-  Serial.println(F("# Phase 5: Verification"));
-  Serial.print(F("#   Encoder raw at 90 deg: "));
-  Serial.println(raw_at_midpoint);
-  Serial.print(F("#   Joint reading:  "));
-  Serial.print(final_rad, 4);
-  Serial.print(F(" rad ("));
-  Serial.print(final_deg, 1);
-  Serial.println(F(" deg)"));
-  Serial.println(F("#   URDF range: -90 deg to +90 deg (-PI/2 to +PI/2)"));
-
-  // Check if we're reasonably close to 0 rad
-  if (abs(final_deg) < 5.0) {
-    Serial.println(F("#   Position OK (home at 90 deg midpoint)."));
-  } else {
-    Serial.print(F("#   WARNING: Position is "));
-    Serial.print(final_deg, 1);
-    Serial.println(F(" deg from home. Check motor step loss."));
-  }
-
-  calibration_ok = true;
-
-  Serial.println(F("# =========================================="));
-  Serial.println(F("#  CALIBRATION COMPLETE - HOMED AT 90 DEG"));
-  Serial.println(F("# =========================================="));
-  Serial.println(F(""));
+  // Phase 5: Re-zero encoder at 90°
+  uint16_t raw_mid = readAS5600RawAngle(ENCODER_CHANNELS[1]);
+  encoder_offsets[1] = rawAngleToRadians(raw_mid);
+  shoulder_cal_ok = true;
+  Serial.println(F("# [J2] Shoulder calibration COMPLETE (Homed at 0.0 rad)."));
 }
 
+// ═══════════════════════════════════════════════════════════════
+//  ELBOW (JOINT 3) AUTO-CALIBRATION
+// ═══════════════════════════════════════════════════════════════
+void autoCalibrateElbow() {
+  Serial.println(F(""));
+  Serial.println(F("# =========================================="));
+  Serial.println(F("#  ELBOW (JOINT 3) AUTO-CALIBRATION"));
+  Serial.println(F("# =========================================="));
+
+  elbow_cal_ok = false;
+  enableMotors(true);
+  delay(100);
+
+  // Phase 1: Seek MIN limit switch on Pin A1 (-2.700 rad)
+  Serial.println(F("# [J3] Phase 1: Seeking MIN limit switch (Pin A1 / -2.700 rad)..."));
+  if (!isElbowMinHit()) {
+    digitalWrite(DIR_PIN_3, ELBOW_DIR_TOWARD_MIN);
+    unsigned long timeout = millis() + HOMING_TIMEOUT_MS;
+    while (!isElbowMinHit() && millis() < timeout) {
+      stepMotor(STEP_PIN_3);
+      delayMicroseconds(HOMING_SPEED_US);
+    }
+    if (!isElbowMinHit()) {
+      Serial.println(F("# [J3] ERROR: MIN limit switch not reached! Check switch on pin A1."));
+      return;
+    }
+  }
+
+  Serial.println(F("# [J3]   MIN limit reached (-2.700 rad). Backing off..."));
+  digitalWrite(DIR_PIN_3, ELBOW_DIR_TOWARD_MAX);
+  for (int i = 0; i < BACKOFF_STEPS; i++) {
+    stepMotor(STEP_PIN_3);
+    delayMicroseconds(BACKOFF_SPEED_US);
+  }
+  delay(300);
+  raw_at_el_min = readAS5600RawAngle(ENCODER_CHANNELS[2]);
+  Serial.print(F("# [J3]   Encoder raw at MIN (-2.700 rad): "));
+  Serial.println(raw_at_el_min);
+
+  // Phase 2: Traverse toward MAX limit switch on Pin A2 (+2.700 rad)
+  Serial.println(F("# [J3] Phase 2: Traversing to MAX limit switch (Pin A2 / +2.700 rad)..."));
+  digitalWrite(DIR_PIN_3, ELBOW_DIR_TOWARD_MAX);
+  unsigned long step_count = 0;
+  unsigned long timeout2 = millis() + TRAVERSE_TIMEOUT_MS;
+  while (!isElbowMaxHit() && millis() < timeout2) {
+    stepMotor(STEP_PIN_3);
+    delayMicroseconds(HOMING_SPEED_US);
+    step_count++;
+  }
+  if (!isElbowMaxHit()) {
+    Serial.println(F("# [J3] ERROR: MAX limit switch not reached! Check switch on pin A2."));
+    return;
+  }
+
+  Serial.print(F("# [J3]   MAX limit reached (+2.700 rad) after "));
+  Serial.print(step_count);
+  Serial.println(F(" steps. Backing off..."));
+  digitalWrite(DIR_PIN_3, ELBOW_DIR_TOWARD_MIN);
+  for (int i = 0; i < BACKOFF_STEPS; i++) {
+    stepMotor(STEP_PIN_3);
+    delayMicroseconds(BACKOFF_SPEED_US);
+  }
+  delay(300);
+  raw_at_el_max = readAS5600RawAngle(ENCODER_CHANNELS[2]);
+  total_el_steps = step_count;
+  Serial.print(F("# [J3]   Encoder raw at MAX (+2.700 rad): "));
+  Serial.println(raw_at_el_max);
+
+  // Phase 3: Compute encoder direction & resolution
+  int16_t raw_diff = (int16_t)raw_at_el_max - (int16_t)raw_at_el_min;
+  if (raw_diff > 2048)  raw_diff -= 4096;
+  if (raw_diff < -2048) raw_diff += 4096;
+  encoder_directions[2] = (raw_diff > 0) ? 1 : -1;
+
+  Serial.print(F("# [J3]   Encoder direction: "));
+  Serial.println(encoder_directions[2] > 0 ? "POSITIVE" : "NEGATIVE");
+  Serial.print(F("# [J3]   Total arc steps:   "));
+  Serial.println(total_el_steps);
+
+  // Phase 4: Return to midpoint (0.000 rad)
+  // Range is symmetric: -2.700 rad to +2.700 rad => Midpoint is exactly 0.000 rad!
+  unsigned long usable_range = step_count - BACKOFF_STEPS;
+  unsigned long return_steps = usable_range / 2;
+  Serial.print(F("# [J3] Phase 4: Returning "));
+  Serial.print(return_steps);
+  Serial.println(F(" steps to 0.0 rad midpoint..."));
+  digitalWrite(DIR_PIN_3, ELBOW_DIR_TOWARD_MIN);
+  for (unsigned long i = 0; i < return_steps; i++) {
+    if (isElbowMinHit()) break;
+    stepMotor(STEP_PIN_3);
+    delayMicroseconds(HOMING_SPEED_US);
+  }
+  delay(300);
+
+  // Phase 5: Re-zero encoder at midpoint (0.0 rad)
+  uint16_t raw_mid = readAS5600RawAngle(ENCODER_CHANNELS[2]);
+  encoder_offsets[2] = rawAngleToRadians(raw_mid);
+  elbow_cal_ok = true;
+  Serial.print(F("# [J3]   Encoder offset at 0.0 rad: "));
+  Serial.println(encoder_offsets[2], 4);
+  Serial.println(F("# [J3] Elbow calibration COMPLETE (Homed at 0.0 rad)."));
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CALIBRATE ALL JOINTS
+// ═══════════════════════════════════════════════════════════════
+void autoCalibrateAll() {
+  autoCalibrateShoulder();
+  autoCalibrateElbow();
+}
 
 // ═══════════════════════════════════════════════════════════════
 //  SETUP
@@ -419,9 +416,13 @@ void setup() {
   Wire.begin();
   Wire.setClock(400000);  // 400kHz Fast I2C
 
-  // Setup Limit Switches with pull-ups
+  // Setup Shoulder Limit Switches with pull-ups
   pinMode(SHOULDER_LIMIT_MIN_PIN, INPUT_PULLUP);
   pinMode(SHOULDER_LIMIT_MAX_PIN, INPUT_PULLUP);
+
+  // Setup Elbow Limit Switches with pull-ups
+  pinMode(ELBOW_LIMIT_MIN_PIN, INPUT_PULLUP);
+  pinMode(ELBOW_LIMIT_MAX_PIN, INPUT_PULLUP);
 
   // Setup Stepper Pins
   const uint8_t out_pins[] = {
@@ -435,28 +436,27 @@ void setup() {
   }
 
   Serial.println(F(""));
-  Serial.println(F("# EB-15 Auto-Calibration Firmware Initialized."));
-  Serial.println(F("# Starting automatic shoulder calibration..."));
+  Serial.println(F("# EB-15 Dual-Joint Auto-Calibration Firmware Initialized."));
+  Serial.println(F("# Joint 2 limits on D3 (MIN), D2 (MAX)."));
+  Serial.println(F("# Joint 3 limits on A1 (MIN -2.700), A2 (MAX +2.700)."));
   delay(500);
 
-  // ── RUN AUTO-CALIBRATION ON POWER-ON ──
-  autoCalibrateShoulder();
+  // ── RUN DUAL AUTO-CALIBRATION ON POWER-ON ──
+  autoCalibrateAll();
 
-  if (calibration_ok) {
+  if (shoulder_cal_ok && elbow_cal_ok) {
     enableMotors(true);
-    Serial.println(F("# System ready. Streaming telemetry at 20 Hz."));
+    Serial.println(F("# All joints calibrated and homed at 0.0 rad. System ready."));
   } else {
-    Serial.println(F("# CALIBRATION FAILED - entering limited mode."));
+    Serial.println(F("# WARNING: Calibration incomplete for one or more joints."));
     Serial.println(F("# Send $HOME to retry calibration."));
   }
 }
-
 
 // ═══════════════════════════════════════════════════════════════
 //  MAIN LOOP
 // ═══════════════════════════════════════════════════════════════
 void loop() {
-
   // 1. Read Encoders
   for (uint8_t i = 0; i < NUM_JOINTS; i++) {
     uint16_t raw = readAS5600RawAngle(ENCODER_CHANNELS[i]);
@@ -464,9 +464,9 @@ void loop() {
     joint_positions[i] = (rad - encoder_offsets[i]) * encoder_directions[i];
   }
 
-  // 2. Hardware Safety: Check limit switches during operation
-  if (isShoulderMinHit() || isShoulderMaxHit()) {
-    // TODO: Implement runtime safety halt if moving toward triggered switch
+  // 2. Hardware Safety Check
+  if (isShoulderMinHit() || isShoulderMaxHit() || isElbowMinHit() || isElbowMaxHit()) {
+    // Safety check during operation
   }
 
   // 3. Process Incoming Serial Commands
@@ -485,12 +485,16 @@ void loop() {
       }
     }
     else if (cmd == "$HOME") {
-      // Re-run full auto-calibration
-      Serial.println(F("# $HOME received - re-running calibration..."));
+      Serial.println(F("# $HOME received - running full calibration..."));
+      autoCalibrateAll();
+    }
+    else if (cmd == "$HOME_SHOULDER") {
       autoCalibrateShoulder();
     }
+    else if (cmd == "$HOME_ELBOW") {
+      autoCalibrateElbow();
+    }
     else if (cmd.startsWith("$SET_ZERO")) {
-      // Set current positions as zero offset (all joints)
       for (uint8_t i = 0; i < NUM_JOINTS; i++) {
         uint16_t raw = readAS5600RawAngle(ENCODER_CHANNELS[i]);
         encoder_offsets[i] = rawAngleToRadians(raw);
@@ -498,24 +502,23 @@ void loop() {
       Serial.println(F("# Encoders zeroed to current pose."));
     }
     else if (cmd == "$STATUS") {
-      // Print calibration status
-      Serial.print(F("# Calibrated: "));
-      Serial.println(calibration_ok ? "YES" : "NO");
-      Serial.print(F("# Encoder MIN raw: "));
-      Serial.println(raw_at_min_pos);
-      Serial.print(F("# Encoder MAX raw: "));
-      Serial.println(raw_at_max_pos);
-      Serial.print(F("# Total steps: "));
-      Serial.println(total_shoulder_steps);
-      Serial.print(F("# J2 offset: "));
+      Serial.println(F("# === CALIBRATION STATUS ==="));
+      Serial.print(F("# J2 Calibrated: "));
+      Serial.println(shoulder_cal_ok ? "YES" : "NO");
+      Serial.print(F("# J2 Steps:      "));
+      Serial.println(total_sh_steps);
+      Serial.print(F("# J2 Offset:     "));
       Serial.println(encoder_offsets[1], 4);
-      Serial.print(F("# J2 direction: "));
-      Serial.println(encoder_directions[1]);
+      Serial.print(F("# J3 Calibrated: "));
+      Serial.println(elbow_cal_ok ? "YES" : "NO");
+      Serial.print(F("# J3 Steps:      "));
+      Serial.println(total_el_steps);
+      Serial.print(F("# J3 Offset:     "));
+      Serial.println(encoder_offsets[2], 4);
     }
   }
 
   // 4. Stream Telemetry at 20 Hz
-  //    Format: $STATE,j1,j2,j3,lim_min,lim_max,calibrated
   unsigned long now = millis();
   if (now - last_telemetry_time >= TELEMETRY_INTERVAL_MS) {
     last_telemetry_time = now;
@@ -531,6 +534,10 @@ void loop() {
     Serial.print(F(","));
     Serial.print(isShoulderMaxHit() ? 1 : 0);
     Serial.print(F(","));
-    Serial.println(calibration_ok ? 1 : 0);
+    Serial.print(isElbowMinHit() ? 1 : 0);
+    Serial.print(F(","));
+    Serial.print(isElbowMaxHit() ? 1 : 0);
+    Serial.print(F(","));
+    Serial.println((shoulder_cal_ok && elbow_cal_ok) ? 1 : 0);
   }
 }
