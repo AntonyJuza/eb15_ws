@@ -1,0 +1,160 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Gripper Stroke Limits -->
+  <xacro:property name="gripper_open_limit"  value="-0.016"/>
+  <xacro:property name="gripper_close_limit" value="0.012"/>
+
+  <!-- ================================================= -->
+  <!-- EBG-20 ADAPTIVE ROBOT GRIPPER                     -->
+  <!-- ================================================= -->
+  <!-- Fixed base attached to tool0: wrist piece inserts 9.5mm into collar of 002 -->
+  <joint name="gripper_base_joint" type="fixed">
+    <parent link="tool0"/>
+    <child link="gripper_base_link"/>
+    <origin xyz="0 0 -0.0095" rpy="0 0 0"/>
+  </joint>
+
+  <link name="gripper_base_link">
+    <!-- Main Housing (002 + 003 + 015 Pinion) -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://eb15_description/meshes/gripper_base.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="dark_gray"/>
+    </visual>
+    <!-- Front Cover Plate (004) -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://eb15_description/meshes/gripper_cover.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="light_white"/>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0.0385" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.085 0.065 0.077"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 0.0385" rpy="0 0 0"/>
+      <mass value="0.22"/>
+      <inertia ixx="0.00015" ixy="0" ixz="0" iyy="0.00018" iyz="0" izz="0.00012"/>
+    </inertial>
+  </link>
+
+  <!-- ================================================= -->
+  <!-- GRIPPER LEFT FINGER (010 + 011 + 007 + 008 + 009) -->
+  <!-- Prismatic joint sliding along X (inward to close) -->
+  <!-- ================================================= -->
+  <joint name="gripper_left_joint" type="prismatic">
+    <parent link="gripper_base_link"/>
+    <child link="gripper_left_finger_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="${gripper_open_limit}" upper="${gripper_close_limit}" effort="20.0" velocity="0.05"/>
+    <dynamics damping="0.5" friction="0.1"/>
+  </joint>
+
+  <link name="gripper_left_finger_link">
+    <!-- Finger Body & Rack (010 + 011 + 007 + 008) -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://eb15_description/meshes/gripper_left_finger.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="dark_gray"/>
+    </visual>
+    <!-- White Grip Pad (009) -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://eb15_description/meshes/gripper_left_pad.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="light_white"/>
+    </visual>
+
+    <collision>
+      <origin xyz="-0.020 0 0.098" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.015 0.021 0.040"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="-0.015 0 0.088" rpy="0 0 0"/>
+      <mass value="0.04"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+  </link>
+
+  <!-- ================================================== -->
+  <!-- GRIPPER RIGHT FINGER (005 + 006 + 012 + 013 + 014) -->
+  <!-- Prismatic joint sliding along -X (mimics left)     -->
+  <!-- ================================================== -->
+  <joint name="gripper_right_joint" type="prismatic">
+    <parent link="gripper_base_link"/>
+    <child link="gripper_right_finger_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="-1 0 0"/>
+    <limit lower="${gripper_open_limit}" upper="${gripper_close_limit}" effort="20.0" velocity="0.05"/>
+    <mimic joint="gripper_left_joint" multiplier="1.0" offset="0.0"/>
+    <dynamics damping="0.5" friction="0.1"/>
+  </joint>
+
+  <link name="gripper_right_finger_link">
+    <!-- Finger Body & Rack (005 + 006 + 012 + 013) -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://eb15_description/meshes/gripper_right_finger.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="dark_gray"/>
+    </visual>
+    <!-- White Grip Pad (014) -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://eb15_description/meshes/gripper_right_pad.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="light_white"/>
+    </visual>
+
+    <collision>
+      <origin xyz="0.020 0 0.098" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.015 0.021 0.040"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0.015 0 0.088" rpy="0 0 0"/>
+      <mass value="0.04"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+  </link>
+
+  <!-- ================================================= -->
+  <!-- GRIPPER TCP (TOOL CENTER POINT / GRASP FRAME)     -->
+  <!-- ================================================= -->
+  <joint name="gripper_tcp_joint" type="fixed">
+    <parent link="gripper_base_link"/>
+    <child link="gripper_tcp"/>
+    <origin xyz="0 0 0.098" rpy="0 0 0"/>
+  </joint>
+
+  <link name="gripper_tcp">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="0.004"/>
+      </geometry>
+      <material name="accent_red"/>
+    </visual>
+  </link>
+
+</robot>

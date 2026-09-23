@@ -1,0 +1,137 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Joint 3 Limits (avoiding base collisions) -->
+  <xacro:property name="j3_lower_limit" value="-2.700"/>
+  <xacro:property name="j3_upper_limit" value="2.700"/>
+
+  <!-- ================================================= -->
+  <!-- JOINT 3 (ELBOW PITCH)                             -->
+  <!-- ================================================= -->
+  <joint name="joint3" type="revolute">
+    <parent link="link2"/>
+    <child link="link3"/>
+    <origin xyz="0 -0.0838 0.228" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="${j3_lower_limit}" upper="${j3_upper_limit}" effort="12.0" velocity="3.14"/>
+    <dynamics damping="0.4" friction="0.1"/>
+  </joint>
+
+  <!-- ================================================= -->
+  <!-- LINK 3 (FOREARM: 014 + 015)                       -->
+  <!-- ================================================= -->
+  <link name="link3">
+    <!-- 014 Elbow Bracket -->
+    <visual>
+      <origin xyz="-0.100 0.040 -0.095" rpy="1.5707963 0 0"/>
+      <geometry>
+        <mesh filename="package://eb15_description/meshes/014.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="dark_gray"/>
+    </visual>
+
+    <!-- 015 Forearm White Tube -->
+    <visual>
+      <origin xyz="-0.100 -0.100 0.048" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://eb15_description/meshes/015.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="light_white"/>
+    </visual>
+
+    <!-- Collision geometry -->
+    <collision>
+      <origin xyz="0 0 0.113" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.033" length="0.130"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 0.020 0.024" rpy="1.5707963 0 0"/>
+      <geometry>
+        <cylinder radius="0.038" length="0.073"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 0.090" rpy="0 0 0"/>
+      <mass value="0.80"/>
+      <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.0006"/>
+    </inertial>
+  </link>
+
+  <!-- ================================================= -->
+  <!-- WRIST BASE (FIXED ADAPTER TO FOREARM TUBE 015)    -->
+  <!-- ================================================= -->
+  <joint name="wrist_base_joint" type="fixed">
+    <parent link="link3"/>
+    <child link="wrist_base_link"/>
+    <origin xyz="0 0 0.178" rpy="0 0 0"/>
+  </joint>
+
+  <link name="wrist_base_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://eb15_description/meshes/wrist_base.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="dark_gray"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.037" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.082 0.069 0.075"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin xyz="0 0 0.037" rpy="0 0 0"/>
+      <mass value="0.22"/>
+      <inertia ixx="0.0002" ixy="0" ixz="0" iyy="0.0002" iyz="0" izz="0.0002"/>
+    </inertial>
+  </link>
+
+  <!-- ================================================= -->
+  <!-- WRIST JOINT (REVOLUTE WRIST ROLL - SERVO HORN)    -->
+  <!-- ================================================= -->
+  <joint name="wrist_joint" type="revolute">
+    <parent link="wrist_base_link"/>
+    <child link="wrist_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.570796" upper="1.570796" effort="5.0" velocity="3.14"/>
+    <dynamics damping="0.1" friction="0.05"/>
+  </joint>
+
+  <link name="wrist_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://eb15_description/meshes/wrist_rot.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="light_white"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.073" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.028" length="0.029"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin xyz="0 0 0.073" rpy="0 0 0"/>
+      <mass value="0.08"/>
+      <inertia ixx="0.00005" ixy="0" ixz="0" iyy="0.00005" iyz="0" izz="0.00005"/>
+    </inertial>
+  </link>
+
+  <!-- ================================================= -->
+  <!-- TOOL0 (END EFFECTOR FLANGE AT TOP OF SERVO HORN)  -->
+  <!-- ================================================= -->
+  <joint name="tool_joint" type="fixed">
+    <parent link="wrist_link"/>
+    <child link="tool0"/>
+    <origin xyz="0 0 0.0877" rpy="0 0 0"/>
+  </joint>
+
+  <link name="tool0"/>
+
+</robot>

@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<robot name="eb15" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Arguments -->
+  <xacro:arg name="use_gripper" default="true"/>
+
+  <!-- Core Robot Description Modules -->
+  <xacro:include filename="materials.xacro"/>
+  <xacro:include filename="base.xacro"/>
+  <xacro:include filename="shoulder.xacro"/>
+  <xacro:include filename="upper_arm.xacro"/>
+  <xacro:include filename="forearm.xacro"/>
+
+  <!-- End Effector (EBG-20 Adaptive Gripper) -->
+  <xacro:if value="$(arg use_gripper)">
+    <xacro:include filename="gripper.xacro"/>
+  </xacro:if>
+
+</robot>

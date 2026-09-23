@@ -13,7 +13,7 @@ def generate_launch_description():
     pkg_eb15_description = FindPackageShare('eb15_description')
 
     default_urdf_path = PathJoinSubstitution(
-        [pkg_eb15_description, 'urdf', 'eb15.urdf']
+        [pkg_eb15_description, 'urdf', 'eb15.urdf.xacro']
     )
     default_rviz_config_path = PathJoinSubstitution(
         [pkg_eb15_description, 'rviz', 'display.rviz']
@@ -22,7 +22,7 @@ def generate_launch_description():
     model_arg = DeclareLaunchArgument(
         name='model',
         default_value=default_urdf_path,
-        description='Path to the robot URDF description file',
+        description='Path to the robot Xacro/URDF description file',
     )
 
     rviz_arg = DeclareLaunchArgument(
@@ -38,7 +38,7 @@ def generate_launch_description():
     )
 
     robot_description = ParameterValue(
-        Command(['cat ', LaunchConfiguration('model')]),
+        Command(['xacro ', LaunchConfiguration('model')]),
         value_type=str,
     )
 

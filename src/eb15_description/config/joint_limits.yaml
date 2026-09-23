@@ -1,0 +1,52 @@
+# Joint limits configuration for EB-15 Collaborative Robot Arm
+joint_limits:
+  joint1:
+    has_velocity_limits: true
+    max_velocity: 3.14159
+    has_acceleration_limits: false
+    max_acceleration: 0.0
+    has_position_limits: true
+    min_position: -3.14159
+    max_position: 3.14159
+    has_effort_limits: true
+    max_effort: 15.0
+  joint2:
+    has_velocity_limits: true
+    max_velocity: 3.14159
+    has_acceleration_limits: false
+    max_acceleration: 0.0
+    has_position_limits: true
+    min_position: -1.570796
+    max_position: 1.570796
+    has_effort_limits: true
+    max_effort: 15.0
+  joint3:
+    has_velocity_limits: true
+    max_velocity: 3.14159
+    has_acceleration_limits: false
+    max_acceleration: 0.0
+    has_position_limits: true
+    min_position: -2.700
+    max_position: 2.700
+    has_effort_limits: true
+    max_effort: 12.0
+  wrist_joint:
+    has_velocity_limits: true
+    max_velocity: 3.14159
+    has_acceleration_limits: false
+    max_acceleration: 0.0
+    has_position_limits: true
+    min_position: -1.570796
+    max_position: 1.570796
+    has_effort_limits: true
+    max_effort: 5.0
+  gripper_left_joint:
+    has_velocity_limits: true
+    max_velocity: 0.05
+    has_acceleration_limits: false
+    max_acceleration: 0.0
+    has_position_limits: true
+    min_position: -0.016
+    max_position: 0.012
+    has_effort_limits: true
+    max_effort: 20.0
