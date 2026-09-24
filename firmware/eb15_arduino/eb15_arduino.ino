@@ -59,10 +59,24 @@
 // Direction Mappings (configurable / reversible)
 uint8_t base_dir_toward_pos      = HIGH;
 uint8_t base_dir_toward_neg      = LOW;
-uint8_t sh_dir_toward_min        = LOW;
-uint8_t sh_dir_toward_max        = HIGH;
-uint8_t el_dir_toward_min        = LOW;
-uint8_t el_dir_toward_max        = HIGH;
+
+// Explicit Physical Direction Levels:
+const uint8_t SH_DIR_TO_D2        = HIGH;
+const uint8_t SH_DIR_TO_D3        = LOW;
+const uint8_t EL_DIR_TO_A2        = HIGH;
+const uint8_t EL_DIR_TO_A1        = LOW;
+
+// Kinematic movement directions for ROS 2 $CMD:
+uint8_t sh_dir_pos               = SH_DIR_TO_D3; // positive angle steps toward D3 (LOW)
+uint8_t sh_dir_neg               = SH_DIR_TO_D2; // negative angle steps toward D2 (HIGH)
+uint8_t el_dir_pos               = EL_DIR_TO_A1; // positive angle steps toward A1 (LOW)
+uint8_t el_dir_neg               = EL_DIR_TO_A2; // negative angle steps toward A2 (HIGH)
+
+// Homing directions
+uint8_t sh_dir_toward_min        = SH_DIR_TO_D3;
+uint8_t sh_dir_toward_max        = SH_DIR_TO_D2;
+uint8_t el_dir_toward_min        = EL_DIR_TO_A1;
+uint8_t el_dir_toward_max        = EL_DIR_TO_A2;
 
 // Motion Parameters
 #define HOMING_SPEED_US          800    // Delay between pulses during homing
@@ -100,7 +114,7 @@ long     zero_ticks[NUM_JOINTS]          = {0, 0, 0};
 uint16_t last_raw_ticks[NUM_JOINTS]      = {0, 0, 0};
 bool     encoder_initialized[NUM_JOINTS] = {false, false, false};
 
-int8_t   encoder_directions[NUM_JOINTS]  = {1, 1, 1};
+int8_t   encoder_directions[NUM_JOINTS]  = {1, -1, -1};
 float    joint_positions[NUM_JOINTS]     = {0.0f, 0.0f, 0.0f};
 float    target_positions[NUM_JOINTS]    = {0.0f, 0.0f, 0.0f};
 
@@ -179,10 +193,37 @@ void updateEncoders() {
 // ═══════════════════════════════════════════════════════════════
 //  LIMIT SWITCH HELPERS
 // ═══════════════════════════════════════════════════════════════
-bool isShMinHit() { return digitalRead(SHOULDER_LIMIT_MIN_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH); }
-bool isShMaxHit() { return digitalRead(SHOULDER_LIMIT_MAX_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH); }
-bool isElMinHit() { return digitalRead(ELBOW_LIMIT_MIN_PIN)    == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH); }
-bool isElMaxHit() { return digitalRead(ELBOW_LIMIT_MAX_PIN)    == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH); }
+bool isShMinHit() {
+  if (digitalRead(SHOULDER_LIMIT_MIN_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH)) {
+    delayMicroseconds(30);
+    return digitalRead(SHOULDER_LIMIT_MIN_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH);
+  }
+  return false;
+}
+
+bool isShMaxHit() {
+  if (digitalRead(SHOULDER_LIMIT_MAX_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH)) {
+    delayMicroseconds(30);
+    return digitalRead(SHOULDER_LIMIT_MAX_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH);
+  }
+  return false;
+}
+
+bool isElMinHit() {
+  if (digitalRead(ELBOW_LIMIT_MIN_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH)) {
+    delayMicroseconds(30);
+    return digitalRead(ELBOW_LIMIT_MIN_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH);
+  }
+  return false;
+}
+
+bool isElMaxHit() {
+  if (digitalRead(ELBOW_LIMIT_MAX_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH)) {
+    delayMicroseconds(30);
+    return digitalRead(ELBOW_LIMIT_MAX_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH);
+  }
+  return false;
+}
 
 // ═══════════════════════════════════════════════════════════════
 //  MOTOR CONTROL HELPERS
@@ -218,18 +259,24 @@ void stepJointsTowardTarget() {
     current_steps[0]--;
   }
 
-  // Joint 2 (Shoulder) with Limit Switch Safety
+  // Joint 2 (Shoulder) with Fail-Safe Limit Switch Interlock
   if (target_steps[1] > current_steps[1]) {
-    if (!isShMaxHit()) {
-      digitalWrite(DIR_PIN_2, sh_dir_toward_max);
+    uint8_t dir = sh_dir_pos;
+    bool blocked = (dir == SH_DIR_TO_D2 && isShMaxHit()) || 
+                   (dir == SH_DIR_TO_D3 && isShMinHit());
+    if (!blocked) {
+      digitalWrite(DIR_PIN_2, dir);
       step2 = true;
       current_steps[1]++;
     } else {
       target_steps[1] = current_steps[1];
     }
   } else if (target_steps[1] < current_steps[1]) {
-    if (!isShMinHit()) {
-      digitalWrite(DIR_PIN_2, sh_dir_toward_min);
+    uint8_t dir = sh_dir_neg;
+    bool blocked = (dir == SH_DIR_TO_D2 && isShMaxHit()) || 
+                   (dir == SH_DIR_TO_D3 && isShMinHit());
+    if (!blocked) {
+      digitalWrite(DIR_PIN_2, dir);
       step2 = true;
       current_steps[1]--;
     } else {
@@ -237,18 +284,24 @@ void stepJointsTowardTarget() {
     }
   }
 
-  // Joint 3 (Elbow) with Limit Switch Safety
+  // Joint 3 (Elbow) with Fail-Safe Limit Switch Interlock
   if (target_steps[2] > current_steps[2]) {
-    if (!isElMaxHit()) {
-      digitalWrite(DIR_PIN_3, el_dir_toward_max);
+    uint8_t dir = el_dir_pos;
+    bool blocked = (dir == EL_DIR_TO_A2 && isElMaxHit()) || 
+                   (dir == EL_DIR_TO_A1 && isElMinHit());
+    if (!blocked) {
+      digitalWrite(DIR_PIN_3, dir);
       step3 = true;
       current_steps[2]++;
     } else {
       target_steps[2] = current_steps[2];
     }
   } else if (target_steps[2] < current_steps[2]) {
-    if (!isElMinHit()) {
-      digitalWrite(DIR_PIN_3, el_dir_toward_min);
+    uint8_t dir = el_dir_neg;
+    bool blocked = (dir == EL_DIR_TO_A2 && isElMaxHit()) || 
+                   (dir == EL_DIR_TO_A1 && isElMinHit());
+    if (!blocked) {
+      digitalWrite(DIR_PIN_3, dir);
       step3 = true;
       current_steps[2]--;
     } else {

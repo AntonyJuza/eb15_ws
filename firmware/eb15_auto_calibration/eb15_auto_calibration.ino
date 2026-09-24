@@ -91,11 +91,11 @@
 #define TB6600_DISABLE_LEVEL     HIGH
 
 // Homing Direction Mapping (can be toggled live via REV2 / REV3)
-uint8_t sh_dir_toward_min = LOW;
-uint8_t sh_dir_toward_max = HIGH;
+uint8_t sh_dir_toward_min = HIGH;
+uint8_t sh_dir_toward_max = LOW;
 
-uint8_t el_dir_toward_min = LOW;
-uint8_t el_dir_toward_max = HIGH;
+uint8_t el_dir_toward_min = HIGH;
+uint8_t el_dir_toward_max = LOW;
 
 // Motion Parameters
 #define HOMING_SPEED_US          800    // Delay between pulses during homing
@@ -134,7 +134,7 @@ long     zero_ticks[NUM_JOINTS]          = {0, 0, 0};
 uint16_t last_raw_ticks[NUM_JOINTS]      = {0, 0, 0};
 bool     encoder_initialized[NUM_JOINTS] = {false, false, false};
 
-int8_t   encoder_directions[NUM_JOINTS]  = {1, 1, 1};
+int8_t   encoder_directions[NUM_JOINTS]  = {1, -1, -1};
 float    joint_positions[NUM_JOINTS]     = {0.0f, 0.0f, 0.0f};
 float    target_positions[NUM_JOINTS]    = {0.0f, 0.0f, 0.0f};
 

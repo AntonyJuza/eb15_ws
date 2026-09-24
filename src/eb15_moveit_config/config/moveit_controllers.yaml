@@ -1,0 +1,30 @@
+# MoveIt Simple Controller Manager Configuration
+# ================================================
+# This bridges MoveIt trajectory execution to our custom eb15_serial_node
+# via the /joint_states topic (direct mode).
+#
+# In this initial setup, we use a "fake" controller that simply publishes
+# the planned trajectory waypoints to /joint_states so the arm follows
+# the planned path via our existing serial bridge.
+
+moveit_simple_controller_manager:
+  controller_names:
+    - arm_controller
+    - gripper_controller
+
+  arm_controller:
+    type: FollowJointTrajectory
+    action_ns: follow_joint_trajectory
+    default: true
+    joints:
+      - joint1
+      - joint2
+      - joint3
+      - wrist_joint
+
+  gripper_controller:
+    type: GripperCommand
+    action_ns: gripper_action
+    default: true
+    joints:
+      - gripper_left_joint

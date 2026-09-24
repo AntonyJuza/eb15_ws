@@ -1,0 +1,33 @@
+# Joint limits for EB-15 arm
+# Tuned for smooth physical motion without jerking or stepper stalling
+joint_limits:
+  joint1:
+    has_velocity_limits: true
+    max_velocity: 1.0       # ~57 deg/sec
+    has_acceleration_limits: true
+    max_acceleration: 1.5   # Gentle acceleration
+  joint2:
+    has_velocity_limits: true
+    max_velocity: 0.8       # ~45 deg/sec (heavy shoulder)
+    has_acceleration_limits: true
+    max_acceleration: 1.0   # Soft acceleration to prevent inertia shudder
+  joint3:
+    has_velocity_limits: true
+    max_velocity: 1.0       # ~57 deg/sec
+    has_acceleration_limits: true
+    max_acceleration: 1.5
+  wrist_joint:
+    has_velocity_limits: true
+    max_velocity: 2.0       # ~115 deg/sec
+    has_acceleration_limits: true
+    max_acceleration: 3.0
+  gripper_left_joint:
+    has_velocity_limits: true
+    max_velocity: 0.05
+    has_acceleration_limits: true
+    max_acceleration: 0.1
+  gripper_right_joint:
+    has_velocity_limits: true
+    max_velocity: 0.05
+    has_acceleration_limits: true
+    max_acceleration: 0.1

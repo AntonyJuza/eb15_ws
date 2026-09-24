@@ -61,10 +61,29 @@
 #define TB6600_ENABLE_LEVEL      LOW
 #define TB6600_DISABLE_LEVEL     HIGH
 
-uint8_t sh_dir_toward_min = LOW;
-uint8_t sh_dir_toward_max = HIGH;
-uint8_t el_dir_toward_min = LOW;
-uint8_t el_dir_toward_max = HIGH;
+// Explicit Physical Direction Levels:
+// When DIR == SH_DIR_TO_D2, the shoulder physically moves toward switch D2.
+// When DIR == SH_DIR_TO_D3, the shoulder physically moves toward switch D3.
+const uint8_t SH_DIR_TO_D2 = HIGH;
+const uint8_t SH_DIR_TO_D3 = LOW;
+
+// When DIR == EL_DIR_TO_A2, the elbow physically moves toward switch A2.
+// When DIR == EL_DIR_TO_A1, the elbow physically moves toward switch A1.
+const uint8_t EL_DIR_TO_A2 = HIGH;
+const uint8_t EL_DIR_TO_A1 = LOW;
+
+// Kinematic movement directions for ROS 2 $CMD:
+uint8_t sh_dir_pos = SH_DIR_TO_D3; // positive angle steps toward D3 (LOW)
+uint8_t sh_dir_neg = SH_DIR_TO_D2; // negative angle steps toward D2 (HIGH)
+
+uint8_t el_dir_pos = EL_DIR_TO_A1; // positive angle steps toward A1 (LOW)
+uint8_t el_dir_neg = EL_DIR_TO_A2; // negative angle steps toward A2 (HIGH)
+
+// Homing direction mapping:
+uint8_t sh_dir_toward_min = SH_DIR_TO_D3;
+uint8_t sh_dir_toward_max = SH_DIR_TO_D2;
+uint8_t el_dir_toward_min = EL_DIR_TO_A1;
+uint8_t el_dir_toward_max = EL_DIR_TO_A2;
 
 #define HOMING_SPEED_US          800
 #define JOG_SPEED_US             700
@@ -96,9 +115,16 @@ long     zero_ticks[NUM_JOINTS]          = {0, 0, 0};
 uint16_t last_raw_ticks[NUM_JOINTS]      = {0, 0, 0};
 bool     encoder_initialized[NUM_JOINTS] = {false, false, false};
 
-int8_t   encoder_directions[NUM_JOINTS]  = {1, 1, 1};
+int8_t   encoder_directions[NUM_JOINTS]  = {1, -1, -1};
 float    joint_positions[NUM_JOINTS]     = {0.0f, 0.0f, 0.0f};
 float    target_positions[NUM_JOINTS]    = {0.0f, 0.0f, 0.0f};
+
+// Stepper Step Tracking for ROS 2 $CMD
+long     target_steps[NUM_JOINTS]        = {0, 0, 0};
+long     current_steps[NUM_JOINTS]       = {0, 0, 0};
+float    steps_per_rad[NUM_JOINTS]       = {2444.6f, 2173.7f, 2173.7f};
+unsigned long last_step_time             = 0;
+unsigned int  step_interval_us           = 800;
 
 bool          sh_cal_ok         = false;
 unsigned long total_sh_steps    = 0;
@@ -155,10 +181,37 @@ void updateEncoders() {
   }
 }
 
-bool isShMinHit() { return digitalRead(SHOULDER_LIMIT_MIN_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH); }
-bool isShMaxHit() { return digitalRead(SHOULDER_LIMIT_MAX_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH); }
-bool isElMinHit() { return digitalRead(ELBOW_LIMIT_MIN_PIN)    == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH); }
-bool isElMaxHit() { return digitalRead(ELBOW_LIMIT_MAX_PIN)    == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH); }
+bool isShMinHit() {
+  if (digitalRead(SHOULDER_LIMIT_MIN_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH)) {
+    delayMicroseconds(30);
+    return digitalRead(SHOULDER_LIMIT_MIN_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH);
+  }
+  return false;
+}
+
+bool isShMaxHit() {
+  if (digitalRead(SHOULDER_LIMIT_MAX_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH)) {
+    delayMicroseconds(30);
+    return digitalRead(SHOULDER_LIMIT_MAX_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH);
+  }
+  return false;
+}
+
+bool isElMinHit() {
+  if (digitalRead(ELBOW_LIMIT_MIN_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH)) {
+    delayMicroseconds(30);
+    return digitalRead(ELBOW_LIMIT_MIN_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH);
+  }
+  return false;
+}
+
+bool isElMaxHit() {
+  if (digitalRead(ELBOW_LIMIT_MAX_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH)) {
+    delayMicroseconds(30);
+    return digitalRead(ELBOW_LIMIT_MAX_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH);
+  }
+  return false;
+}
 
 void enableAllMotors(bool enable) {
   uint8_t lvl = enable ? TB6600_ENABLE_LEVEL : TB6600_DISABLE_LEVEL;
@@ -174,6 +227,85 @@ void stepMotor(uint8_t step_pin, uint16_t delay_us = HOMING_SPEED_US) {
   delayMicroseconds(delay_us);
 }
 
+// Non-blocking multi-axis stepper step generator for ROS 2 $CMD
+void stepJointsTowardTarget() {
+  bool step1 = false;
+  bool step2 = false;
+  bool step3 = false;
+
+  // Joint 1 (Base)
+  if (target_steps[0] > current_steps[0]) {
+    digitalWrite(DIR_PIN_1, HIGH);
+    step1 = true;
+    current_steps[0]++;
+  } else if (target_steps[0] < current_steps[0]) {
+    digitalWrite(DIR_PIN_1, LOW);
+    step1 = true;
+    current_steps[0]--;
+  }
+
+  // Joint 2 (Shoulder) with Fail-Safe Limit Switch Interlock
+  if (target_steps[1] > current_steps[1]) {
+    uint8_t dir = sh_dir_pos;
+    bool blocked = (dir == SH_DIR_TO_D2 && isShMaxHit()) || 
+                   (dir == SH_DIR_TO_D3 && isShMinHit());
+    if (!blocked) {
+      digitalWrite(DIR_PIN_2, dir);
+      step2 = true;
+      current_steps[1]++;
+    } else {
+      target_steps[1] = current_steps[1];
+    }
+  } else if (target_steps[1] < current_steps[1]) {
+    uint8_t dir = sh_dir_neg;
+    bool blocked = (dir == SH_DIR_TO_D2 && isShMaxHit()) || 
+                   (dir == SH_DIR_TO_D3 && isShMinHit());
+    if (!blocked) {
+      digitalWrite(DIR_PIN_2, dir);
+      step2 = true;
+      current_steps[1]--;
+    } else {
+      target_steps[1] = current_steps[1];
+    }
+  }
+
+  // Joint 3 (Elbow) with Fail-Safe Limit Switch Interlock
+  if (target_steps[2] > current_steps[2]) {
+    uint8_t dir = el_dir_pos;
+    bool blocked = (dir == EL_DIR_TO_A2 && isElMaxHit()) || 
+                   (dir == EL_DIR_TO_A1 && isElMinHit());
+    if (!blocked) {
+      digitalWrite(DIR_PIN_3, dir);
+      step3 = true;
+      current_steps[2]++;
+    } else {
+      target_steps[2] = current_steps[2];
+    }
+  } else if (target_steps[2] < current_steps[2]) {
+    uint8_t dir = el_dir_neg;
+    bool blocked = (dir == EL_DIR_TO_A2 && isElMaxHit()) || 
+                   (dir == EL_DIR_TO_A1 && isElMinHit());
+    if (!blocked) {
+      digitalWrite(DIR_PIN_3, dir);
+      step3 = true;
+      current_steps[2]--;
+    } else {
+      target_steps[2] = current_steps[2];
+    }
+  }
+
+  // Trigger step pulses concurrently
+  if (step1) digitalWrite(STEP_PIN_1, HIGH);
+  if (step2) digitalWrite(STEP_PIN_2, HIGH);
+  if (step3) digitalWrite(STEP_PIN_3, HIGH);
+  if (step1 || step2 || step3) {
+    delayMicroseconds(5);
+    if (step1) digitalWrite(STEP_PIN_1, LOW);
+    if (step2) digitalWrite(STEP_PIN_2, LOW);
+    if (step3) digitalWrite(STEP_PIN_3, LOW);
+  }
+}
+
 bool calibrateShoulder() {
   Serial.println(F("\n--------------------------------------------------------"));
   Serial.println(F(">>> CALIBRATING JOINT 2 (SHOULDER PITCH)..."));
@@ -185,8 +317,13 @@ bool calibrateShoulder() {
   Serial.println(F("  [J2] Step 1: Seeking MIN limit switch (Pin D3)..."));
   digitalWrite(DIR_PIN_2, sh_dir_toward_min);
   unsigned long timeout = millis() + HOMING_TIMEOUT_MS;
-  while (!isShMinHit() && millis() < timeout) {
+  while (!isShMinHit() && !isShMaxHit() && millis() < timeout) {
     stepMotor(STEP_PIN_2, HOMING_SPEED_US);
+  }
+  if (isShMaxHit()) {
+    Serial.println(F("  [J2] WARNING: Hit MAX switch (D2) while seeking MIN! Reversing homing direction..."));
+    sh_dir_toward_min = SH_DIR_TO_D2;
+    sh_dir_toward_max = SH_DIR_TO_D3;
   }
   if (!isShMinHit()) {
     Serial.println(F("  [J2] ERROR: MIN limit switch (D3) not reached! Check wiring or REV2."));
@@ -383,6 +520,8 @@ void setZeroAll() {
   for (uint8_t i = 0; i < NUM_JOINTS; i++) {
     zero_ticks[i] = cumulative_ticks[i];
     joint_positions[i] = 0.0f;
+    current_steps[i] = 0;
+    target_steps[i] = 0;
   }
   sh_cal_ok = true;
   el_cal_ok = true;
@@ -593,19 +732,53 @@ void loop() {
     } else if (cmd == "REV3") {
       uint8_t tmp = el_dir_toward_min; el_dir_toward_min = el_dir_toward_max; el_dir_toward_max = tmp;
       Serial.println(F("[CONFIG] Elbow (J3) direction reversed."));
-    } else if (cmd.startsWith("$CMD,")) {
+    } else if (cmd.startsWith(F("$CMD,"))) {
       int c1 = cmd.indexOf(',', 5);
-      int c2 = cmd.indexOf(',', c1 + 1);
+      int c2 = (c1 > 0) ? cmd.indexOf(',', c1 + 1) : -1;
+      int c3 = (c2 > 0) ? cmd.indexOf(',', c2 + 1) : -1;
+      int c4 = (c3 > 0) ? cmd.indexOf(',', c3 + 1) : -1;
+
       if (c1 > 0 && c2 > 0) {
-        target_positions[0] = cmd.substring(5, c1).toFloat();
-        target_positions[1] = cmd.substring(c1 + 1, c2).toFloat();
-        target_positions[2] = cmd.substring(c2 + 1).toFloat();
+        float q1 = cmd.substring(5, c1).toFloat();
+        float q2 = cmd.substring(c1 + 1, c2).toFloat();
+        float q3 = (c3 > 0) ? cmd.substring(c2 + 1, c3).toFloat() : cmd.substring(c2 + 1).toFloat();
+
+        target_positions[0] = q1;
+        target_positions[1] = q2;
+        target_positions[2] = q3;
+
+        target_steps[0] = (long)round(q1 * steps_per_rad[0]);
+        target_steps[1] = (long)round(q2 * steps_per_rad[1]);
+        target_steps[2] = (long)round(q3 * steps_per_rad[2]);
+
+        // Wrist Servo
+        if (c3 > 0) {
+          float q_wrist = (c4 > 0) ? cmd.substring(c3 + 1, c4).toFloat() : cmd.substring(c3 + 1).toFloat();
+          wrist_servo_angle = constrain((int)round(90.0f + q_wrist * (180.0f / PI)), 0, 180);
+          wristServo.write(wrist_servo_angle);
+        }
+
+        // Gripper Servo
+        if (c4 > 0) {
+          float q_grip = cmd.substring(c4 + 1).toFloat();
+          float t = constrain((q_grip + 0.016f) / 0.028f, 0.0f, 1.0f);
+          gripper_servo_angle = constrain((int)round(140.0f - t * 90.0f), 45, 145);
+          gripperServo.write(gripper_servo_angle);
+        }
       }
     } else {
       Serial.println(F("Commands: ALL, CAL2, CAL3, ZERO, Z1, Z2, Z3, STAT, ENA, DIS, 1+, 1-, 2+, 2-, 3+, 3-, W+, W-, G_OPEN, G_CLOSE"));
     }
   }
 
+  // 3. Non-blocking Multi-Axis Stepper Engine
+  unsigned long now_us = micros();
+  if (now_us - last_step_time >= step_interval_us) {
+    last_step_time = now_us;
+    stepJointsTowardTarget();
+  }
+
+  // 4. Telemetry Streaming (20 Hz)
   unsigned long now = millis();
   if (now - last_telemetry_time >= TELEMETRY_INTERVAL_MS) {
     last_telemetry_time = now;
