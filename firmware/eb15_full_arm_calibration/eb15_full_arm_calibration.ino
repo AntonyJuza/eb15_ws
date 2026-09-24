@@ -473,6 +473,196 @@ bool calibrateElbow() {
   return true;
 }
 
+// ─────────────────────────────────────────────────────────────
+// SYNCHRONIZED DUAL-AXIS STEP PULSER
+// ─────────────────────────────────────────────────────────────
+void stepDualMotors(bool step_sh, bool step_el, unsigned int speed_us) {
+  if (step_sh) digitalWrite(STEP_PIN_2, HIGH);
+  if (step_el) digitalWrite(STEP_PIN_3, HIGH);
+  delayMicroseconds(5);
+  if (step_sh) digitalWrite(STEP_PIN_2, LOW);
+  if (step_el) digitalWrite(STEP_PIN_3, LOW);
+  delayMicroseconds(speed_us);
+}
+
+// ─────────────────────────────────────────────────────────────
+// SYNCHRONIZED DUAL-JOINT SCISSOR CALIBRATION (J2 & J3)
+// Moves Shoulder CW while Elbow CCW, then Shoulder CCW while Elbow CW
+// ─────────────────────────────────────────────────────────────
+bool calibrateShoulderAndElbowSync() {
+  Serial.println(F("\n--------------------------------------------------------"));
+  Serial.println(F(">>> SYNCHRONIZED DUAL-JOINT AUTO-CALIBRATION (J2 & J3) "));
+  Serial.println(F(">>> Scissor Motion: Shoulder CW <-> Elbow CCW           "));
+  Serial.println(F("--------------------------------------------------------"));
+
+  sh_cal_ok = false;
+  el_cal_ok = false;
+  enableAllMotors(true);
+
+  // ─────────────────────────────────────────────────────────────
+  // PHASE 1: Shoulder -> MIN (CW)  &  Elbow -> MAX (CCW)
+  // ─────────────────────────────────────────────────────────────
+  Serial.println(F("  [SYNC Phase 1] Scissoring: Shoulder -> MIN (D3) & Elbow -> MAX (A2)..."));
+  digitalWrite(DIR_PIN_2, sh_dir_toward_min);
+  digitalWrite(DIR_PIN_3, el_dir_toward_max);
+
+  bool sh_hit_min = isShMinHit();
+  bool el_hit_max = isElMaxHit();
+  unsigned long timeout = millis() + HOMING_TIMEOUT_MS;
+
+  while ((!sh_hit_min || !el_hit_max) && millis() < timeout) {
+    if (!sh_hit_min && isShMinHit()) {
+      sh_hit_min = true;
+      Serial.println(F("  [SYNC] Shoulder MIN switch (D3) reached!"));
+    }
+    if (!el_hit_max && isElMaxHit()) {
+      el_hit_max = true;
+      Serial.println(F("  [SYNC] Elbow MAX switch (A2) reached!"));
+    }
+
+    stepDualMotors(!sh_hit_min, !el_hit_max, HOMING_SPEED_US);
+  }
+
+  if (!sh_hit_min) {
+    Serial.println(F("  [SYNC] ERROR: Shoulder MIN switch not reached within timeout!"));
+    return false;
+  }
+  if (!el_hit_max) {
+    Serial.println(F("  [SYNC] ERROR: Elbow MAX switch not reached within timeout!"));
+    return false;
+  }
+
+  // Phase 1 Backoff: Shoulder toward MAX, Elbow toward MIN
+  Serial.println(F("  [SYNC] Backing off 200 steps from limit switches..."));
+  digitalWrite(DIR_PIN_2, sh_dir_toward_max);
+  digitalWrite(DIR_PIN_3, el_dir_toward_min);
+  for (int i = 0; i < BACKOFF_STEPS; i++) {
+    stepDualMotors(true, true, BACKOFF_SPEED_US);
+  }
+  delay(300);
+
+  updateEncoders();
+  long sh_ticks_min = cumulative_ticks[1];
+  long el_ticks_max = cumulative_ticks[2];
+  Serial.print(F("  [SYNC] Encoders at Phase 1: Shoulder="));
+  Serial.print(sh_ticks_min);
+  Serial.print(F(" | Elbow="));
+  Serial.println(el_ticks_max);
+
+  // ─────────────────────────────────────────────────────────────
+  // PHASE 2: Shoulder -> MAX (CCW)  &  Elbow -> MIN (CW)
+  // ─────────────────────────────────────────────────────────────
+  Serial.println(F("  [SYNC Phase 2] Scissoring: Shoulder -> MAX (D2) & Elbow -> MIN (A1)..."));
+  digitalWrite(DIR_PIN_2, sh_dir_toward_max);
+  digitalWrite(DIR_PIN_3, el_dir_toward_min);
+
+  bool sh_hit_max = false;
+  bool el_hit_min = false;
+  unsigned long sh_steps = 0;
+  unsigned long el_steps = 0;
+  timeout = millis() + TRAVERSE_TIMEOUT_MS;
+
+  while ((!sh_hit_max || !el_hit_min) && millis() < timeout) {
+    if (!sh_hit_max) {
+      if (isShMaxHit()) {
+        sh_hit_max = true;
+        Serial.print(F("  [SYNC] Shoulder MAX switch (D2) reached after "));
+        Serial.print(sh_steps);
+        Serial.println(F(" steps!"));
+      } else {
+        sh_steps++;
+      }
+    }
+
+    if (!el_hit_min) {
+      if (isElMinHit()) {
+        el_hit_min = true;
+        Serial.print(F("  [SYNC] Elbow MIN switch (A1) reached after "));
+        Serial.print(el_steps);
+        Serial.println(F(" steps!"));
+      } else {
+        el_steps++;
+      }
+    }
+
+    stepDualMotors(!sh_hit_max, !el_hit_min, HOMING_SPEED_US);
+  }
+
+  if (!sh_hit_max) {
+    Serial.println(F("  [SYNC] ERROR: Shoulder MAX switch not reached within timeout!"));
+    return false;
+  }
+  if (!el_hit_min) {
+    Serial.println(F("  [SYNC] ERROR: Elbow MIN switch not reached within timeout!"));
+    return false;
+  }
+
+  // Phase 2 Backoff: Shoulder toward MIN, Elbow toward MAX
+  Serial.println(F("  [SYNC] Backing off 200 steps from second limits..."));
+  digitalWrite(DIR_PIN_2, sh_dir_toward_min);
+  digitalWrite(DIR_PIN_3, el_dir_toward_max);
+  for (int i = 0; i < BACKOFF_STEPS; i++) {
+    stepDualMotors(true, true, BACKOFF_SPEED_US);
+  }
+  delay(300);
+
+  updateEncoders();
+  long sh_ticks_max = cumulative_ticks[1];
+  long el_ticks_min = cumulative_ticks[2];
+  total_sh_steps = sh_steps;
+  total_el_steps = el_steps;
+
+  encoder_directions[1] = (sh_ticks_max > sh_ticks_min) ? 1 : -1;
+  encoder_directions[2] = (el_ticks_max > el_ticks_min) ? 1 : -1;
+
+  Serial.print(F("  [SYNC] Direction signs: Shoulder="));
+  Serial.print(encoder_directions[1] > 0 ? F("+1") : F("-1"));
+  Serial.print(F(" | Elbow="));
+  Serial.println(encoder_directions[2] > 0 ? F("+1") : F("-1"));
+
+  // ─────────────────────────────────────────────────────────────
+  // PHASE 3: Simultaneous Return to Upright Midpoint (0.0 rad)
+  // ─────────────────────────────────────────────────────────────
+  unsigned long sh_usable = (total_sh_steps > BACKOFF_STEPS) ? (total_sh_steps - BACKOFF_STEPS) : 0;
+  unsigned long el_usable = (total_el_steps > BACKOFF_STEPS) ? (total_el_steps - BACKOFF_STEPS) : 0;
+  unsigned long sh_return_steps = sh_usable / 2;
+  unsigned long el_return_steps = el_usable / 2;
+
+  Serial.print(F("  [SYNC Phase 3] Returning both joints to vertical midpoint: Shoulder="));
+  Serial.print(sh_return_steps);
+  Serial.print(F(" steps, Elbow="));
+  Serial.print(el_return_steps);
+  Serial.println(F(" steps..."));
+
+  // From MAX limit, Shoulder moves toward MIN to center
+  // From MIN limit, Elbow moves toward MAX to center
+  digitalWrite(DIR_PIN_2, sh_dir_toward_min);
+  digitalWrite(DIR_PIN_3, el_dir_toward_max);
+
+  unsigned long max_return = (sh_return_steps > el_return_steps) ? sh_return_steps : el_return_steps;
+  for (unsigned long i = 0; i < max_return; i++) {
+    bool do_sh = (i < sh_return_steps) && !isShMinHit();
+    bool do_el = (i < el_return_steps) && !isElMaxHit();
+    stepDualMotors(do_sh, do_el, HOMING_SPEED_US);
+  }
+  delay(300);
+
+  updateEncoders();
+  zero_ticks[1] = cumulative_ticks[1];
+  zero_ticks[2] = cumulative_ticks[2];
+  joint_positions[1] = 0.0f;
+  joint_positions[2] = 0.0f;
+  current_steps[1] = 0;
+  current_steps[2] = 0;
+  target_steps[1] = 0;
+  target_steps[2] = 0;
+  sh_cal_ok = true;
+  el_cal_ok = true;
+
+  Serial.println(F("\n  [SYNC] >>> BOTH JOINTS SYNCHRONIZED & HOMED TO 0.0000 RAD (UPRIGHT)! <<<\n"));
+  return true;
+}
+
 void calibrateServos() {
   Serial.println(F("\n--------------------------------------------------------"));
   Serial.println(F(">>> CALIBRATING SERVOS (WRIST ON D13 & GRIPPER ON A0)..."));
@@ -531,27 +721,21 @@ void setZeroAll() {
 
 void runFullArmCalibration() {
   Serial.println(F("\n========================================================"));
-  Serial.println(F("        STARTING FULL ARM AUTO-CALIBRATION              "));
+  Serial.println(F("   STARTING FULL ARM SYNCHRONIZED AUTO-CALIBRATION      "));
   Serial.println(F("========================================================"));
 
   enableAllMotors(true);
 
-  Serial.println(F("\n>> Step 1/4: Initializing Base (Joint 1)..."));
+  Serial.println(F("\n>> Step 1/3: Initializing Base (Joint 1)..."));
   zeroBase();
 
-  Serial.println(F("\n>> Step 2/4: Homing Shoulder (Joint 2) to vertical..."));
-  if (!calibrateShoulder()) {
-    Serial.println(F("\n[HALT] Shoulder calibration failed! Aborting remaining joints."));
+  Serial.println(F("\n>> Step 2/3: Synchronized Scissor Calibration (Shoulder & Elbow)..."));
+  if (!calibrateShoulderAndElbowSync()) {
+    Serial.println(F("\n[HALT] Synchronized calibration failed! Aborting."));
     return;
   }
 
-  Serial.println(F("\n>> Step 3/4: Homing Elbow (Joint 3)..."));
-  if (!calibrateElbow()) {
-    Serial.println(F("\n[HALT] Elbow calibration failed!"));
-    return;
-  }
-
-  Serial.println(F("\n>> Step 4/4: Centering Wrist & Gripper Servos..."));
+  Serial.println(F("\n>> Step 3/3: Centering Wrist & Gripper Servos..."));
   calibrateServos();
 
   Serial.println(F("\n========================================================"));
@@ -678,6 +862,8 @@ void loop() {
 
     if (cmd == "ALL" || cmd == "CAL") {
       runFullArmCalibration();
+    } else if (cmd == "SYNC" || cmd == "CAL_SYNC") {
+      calibrateShoulderAndElbowSync();
     } else if (cmd == "J2" || cmd == "CAL2") {
       calibrateShoulder();
     } else if (cmd == "J3" || cmd == "CAL3") {
