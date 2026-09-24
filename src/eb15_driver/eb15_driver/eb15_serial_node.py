@@ -28,13 +28,26 @@ class EB15SerialBridge(Node):
         # Raw Telemetry & Diagnostic Publisher
         self.diag_pub = self.create_publisher(String, '/eb15/diagnostics', 10)
 
-        # Joint Command Subscriber
+        # Joint Command Subscriber (Float64MultiArray)
         self.cmd_sub = self.create_subscription(
             Float64MultiArray,
             '/eb15/joint_commands',
             self.command_callback,
             10
         )
+
+        # Target JointState Subscriber (from GUI sliders or MoveIt)
+        self.target_sub = self.create_subscription(
+            JointState,
+            '/eb15/target_joint_states',
+            self.target_joint_state_callback,
+            10
+        )
+
+        # Stored commanded positions for wrist and gripper
+        self.last_cmd_wrist = 0.0
+        self.last_cmd_grip = 0.0
+        self.last_cmd_time = 0.0
 
         # Home trigger subscriber
         self.home_sub = self.create_subscription(
@@ -109,7 +122,7 @@ class EB15SerialBridge(Node):
                 msg = JointState()
                 msg.header.stamp = self.get_clock().now().to_msg()
                 msg.name = self.joint_names
-                positions = [q1, q2, q3]
+                positions = [q1, q2, q3, self.last_cmd_wrist, self.last_cmd_grip]
                 while len(positions) < len(self.joint_names):
                     positions.append(0.0)
                 msg.position = positions
@@ -118,12 +131,34 @@ class EB15SerialBridge(Node):
             except ValueError as e:
                 self.get_logger().warn(f'Malformed telemetry packet: {line} ({e})')
 
-    def command_callback(self, msg: Float64MultiArray):
+    def send_cmd(self, q1: float, q2: float, q3: float, q_wrist: float = 0.0, q_grip: float = 0.0):
+        self.last_cmd_wrist = q_wrist
+        self.last_cmd_grip = q_grip
         if self.ser and self.ser.is_open:
-            if len(msg.data) >= 3:
-                cmd_str = f'$CMD,{msg.data[0]:.4f},{msg.data[1]:.4f},{msg.data[2]:.4f}\n'
-                self.ser.write(cmd_str.encode('utf-8'))
-                self.get_logger().debug(f'Sent command: {cmd_str.strip()}')
+            # Throttle sending to ~40 Hz max to avoid buffer overflow
+            now = time.time()
+            if (now - self.last_cmd_time) < 0.025:
+                return
+            self.last_cmd_time = now
+
+            cmd_str = f'$CMD,{q1:.4f},{q2:.4f},{q3:.4f},{q_wrist:.4f},{q_grip:.4f}\n'
+            self.ser.write(cmd_str.encode('utf-8'))
+            self.get_logger().debug(f'Sent command: {cmd_str.strip()}')
+
+    def target_joint_state_callback(self, msg: JointState):
+        name_to_pos = dict(zip(msg.name, msg.position))
+        q1 = name_to_pos.get('joint1', 0.0)
+        q2 = name_to_pos.get('joint2', 0.0)
+        q3 = name_to_pos.get('joint3', 0.0)
+        q_wrist = name_to_pos.get('wrist_joint', self.last_cmd_wrist)
+        q_grip = name_to_pos.get('gripper_left_joint', self.last_cmd_grip)
+        self.send_cmd(q1, q2, q3, q_wrist, q_grip)
+
+    def command_callback(self, msg: Float64MultiArray):
+        if len(msg.data) >= 5:
+            self.send_cmd(msg.data[0], msg.data[1], msg.data[2], msg.data[3], msg.data[4])
+        elif len(msg.data) >= 3:
+            self.send_cmd(msg.data[0], msg.data[1], msg.data[2])
 
     def home_callback(self, msg: Empty):
         if self.ser and self.ser.is_open:

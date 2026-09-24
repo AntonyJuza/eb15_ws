@@ -12,6 +12,8 @@
 
 #define SHOULDER_LIMIT_MIN_PIN   3
 #define SHOULDER_LIMIT_MAX_PIN   2
+#define ELBOW_LIMIT_MIN_PIN      A1
+#define ELBOW_LIMIT_MAX_PIN      A2
 #define LIMIT_SWITCH_ACTIVE_LOW  true
 
 #define TCA9548A_ADDR            0x70
@@ -78,6 +80,8 @@ void setup() {
 
   pinMode(SHOULDER_LIMIT_MIN_PIN, INPUT_PULLUP);
   pinMode(SHOULDER_LIMIT_MAX_PIN, INPUT_PULLUP);
+  pinMode(ELBOW_LIMIT_MIN_PIN, INPUT_PULLUP);
+  pinMode(ELBOW_LIMIT_MAX_PIN, INPUT_PULLUP);
 
   Serial.println(F("========================================"));
   Serial.println(F("       EB-15 HARDWARE DIAGNOSTIC        "));
@@ -97,26 +101,33 @@ void loop() {
   float deg1 = (raw1 != 9999) ? (raw1 * 360.0 / 4096.0) : -1.0;
   float deg2 = (raw2 != 9999) ? (raw2 * 360.0 / 4096.0) : -1.0;
 
-  // Read Limit Switches
-  bool min_hit = (digitalRead(SHOULDER_LIMIT_MIN_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH));
-  bool max_hit = (digitalRead(SHOULDER_LIMIT_MAX_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH));
+  // Read Limit Switches (Active LOW with internal pull-up)
+  bool sh_min = (digitalRead(SHOULDER_LIMIT_MIN_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH));
+  bool sh_max = (digitalRead(SHOULDER_LIMIT_MAX_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH));
+  bool el_min = (digitalRead(ELBOW_LIMIT_MIN_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH));
+  bool el_max = (digitalRead(ELBOW_LIMIT_MAX_PIN) == (LIMIT_SWITCH_ACTIVE_LOW ? LOW : HIGH));
 
-  Serial.print(F("J1 (Base): "));
-  if (raw0 != 9999) { Serial.print(deg0, 1); Serial.print(F(" deg (raw: ")); Serial.print(raw0); Serial.print(F(")")); }
+  Serial.print(F("J1: "));
+  if (raw0 != 9999) { Serial.print(deg0, 1); Serial.print(F("°")); }
   else Serial.print(F("ERR"));
 
-  Serial.print(F(" | J2 (Shoulder): "));
-  if (raw1 != 9999) { Serial.print(deg1, 1); Serial.print(F(" deg (raw: ")); Serial.print(raw1); Serial.print(F(")")); }
+  Serial.print(F(" | J2: "));
+  if (raw1 != 9999) { Serial.print(deg1, 1); Serial.print(F("°")); }
   else Serial.print(F("ERR"));
 
-  Serial.print(F(" | J3 (Elbow): "));
-  if (raw2 != 9999) { Serial.print(deg2, 1); Serial.print(F(" deg (raw: ")); Serial.print(raw2); Serial.print(F(")")); }
+  Serial.print(F(" | J3: "));
+  if (raw2 != 9999) { Serial.print(deg2, 1); Serial.print(F("°")); }
   else Serial.print(F("ERR"));
 
-  Serial.print(F(" | Limits: [Min: "));
-  Serial.print(min_hit ? F("TRIGGERED") : F("OPEN"));
-  Serial.print(F(", Max: "));
-  Serial.print(max_hit ? F("TRIGGERED") : F("OPEN"));
+  Serial.print(F(" | Shldr: [Min="));
+  Serial.print(sh_min ? F("HIT") : F("ok"));
+  Serial.print(F(", Max="));
+  Serial.print(sh_max ? F("HIT") : F("ok"));
+
+  Serial.print(F("] | Elbow: [Min(A1)="));
+  Serial.print(el_min ? F("HIT") : F("ok"));
+  Serial.print(F(", Max(A2)="));
+  Serial.print(el_max ? F("HIT") : F("ok"));
   Serial.println(F("]"));
 
   delay(200);
