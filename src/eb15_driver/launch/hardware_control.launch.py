@@ -33,6 +33,14 @@ def generate_launch_description():
         description='Launch joint_state_publisher_gui slider control panel'
     )
 
+    feedback_arg = DeclareLaunchArgument(
+        'feedback',
+        default_value='false',
+        description='If true, RViz shows only physical encoder feedback. If false, RViz moves immediately with GUI sliders.'
+    )
+
+    feedback_conf = LaunchConfiguration('feedback')
+
     # CycloneDDS environment variable to avoid FastCDR issues on ROS 2 Jazzy
     set_rmw_env = SetEnvironmentVariable(
         name='RMW_IMPLEMENTATION',
@@ -44,7 +52,7 @@ def generate_launch_description():
         value_type=str
     )
 
-    # Robot State Publisher (publishes TF from real physical /joint_states)
+    # Robot State Publisher (publishes TF from /joint_states)
     robot_state_publisher_node = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
@@ -63,16 +71,33 @@ def generate_launch_description():
             'serial_port': LaunchConfiguration('serial_port'),
             'baud_rate': LaunchConfiguration('baud_rate'),
             'joint_names': ['joint1', 'joint2', 'joint3', 'wrist_joint', 'gripper_left_joint'],
+            'feedback_mode': LaunchConfiguration('feedback'),
         }]
     )
 
-    # Joint State Publisher GUI (Slider controls remapped to target topic)
-    joint_state_publisher_gui_node = Node(
+    # Joint State Publisher GUI in Direct Mode (feedback:=false, default):
+    # Publishes directly to /joint_states so RViz moves immediately when sliders are moved.
+    joint_state_publisher_gui_direct = Node(
         package='joint_state_publisher_gui',
         executable='joint_state_publisher_gui',
         name='joint_state_publisher_gui',
         output='screen',
-        condition=IfCondition(LaunchConfiguration('gui')),
+        condition=IfCondition(
+            Command(['python3 -c "import sys; print(str(\'', LaunchConfiguration('gui'), '\').lower() == \'true\' and str(\'', feedback_conf, '\').lower() == \'false\')\"'])
+        ),
+        parameters=[{'robot_description': robot_description}],
+    )
+
+    # Joint State Publisher GUI in Closed-Loop Feedback Mode (feedback:=true):
+    # Sliders publish to /eb15/target_joint_states, while /joint_states is driven by physical encoders.
+    joint_state_publisher_gui_feedback = Node(
+        package='joint_state_publisher_gui',
+        executable='joint_state_publisher_gui',
+        name='joint_state_publisher_gui',
+        output='screen',
+        condition=IfCondition(
+            Command(['python3 -c "import sys; print(str(\'', LaunchConfiguration('gui'), '\').lower() == \'true\' and str(\'', feedback_conf, '\').lower() == \'true\')\"'])
+        ),
         parameters=[{'robot_description': robot_description}],
         remappings=[
             ('joint_states', '/eb15/target_joint_states'),
@@ -92,9 +117,11 @@ def generate_launch_description():
         serial_port_arg,
         baud_rate_arg,
         gui_arg,
+        feedback_arg,
         set_rmw_env,
         robot_state_publisher_node,
         eb15_driver_node,
-        joint_state_publisher_gui_node,
+        joint_state_publisher_gui_direct,
+        joint_state_publisher_gui_feedback,
         rviz_node,
     ])

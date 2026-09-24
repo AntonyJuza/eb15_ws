@@ -15,15 +15,23 @@ class EB15SerialBridge(Node):
         self.declare_parameter('serial_port', '/dev/ttyUSB0')
         self.declare_parameter('baud_rate', 115200)
         self.declare_parameter('joint_names', ['joint1', 'joint2', 'joint3', 'wrist_joint', 'gripper_left_joint'])
+        self.declare_parameter('feedback_mode', False)
 
         self.port_name = self.get_parameter('serial_port').get_parameter_value().string_value
         self.baud_rate = self.get_parameter('baud_rate').get_parameter_value().integer_value
         self.joint_names = self.get_parameter('joint_names').get_parameter_value().string_array_value
+        feedback_raw = self.get_parameter('feedback_mode').value
+        if isinstance(feedback_raw, str):
+            self.feedback_mode = feedback_raw.lower() in ('true', '1', 'yes')
+        else:
+            self.feedback_mode = bool(feedback_raw)
 
-        self.get_logger().info(f'Initializing EB-15 Serial Bridge on {self.port_name} @ {self.baud_rate} baud')
+        self.get_logger().info(f'Initializing EB-15 Serial Bridge on {self.port_name} @ {self.baud_rate} baud (feedback_mode={self.feedback_mode})')
 
-        # Joint State Publisher
-        self.joint_pub = self.create_publisher(JointState, '/joint_states', 10)
+        # In feedback_mode (True), physical encoder feedback drives /joint_states for RViz
+        # In direct mode (False, default), GUI drives /joint_states for instant RViz response and this node publishes to /eb15/measured_joint_states
+        pub_topic = '/joint_states' if self.feedback_mode else '/eb15/measured_joint_states'
+        self.joint_pub = self.create_publisher(JointState, pub_topic, 10)
 
         # Raw Telemetry & Diagnostic Publisher
         self.diag_pub = self.create_publisher(String, '/eb15/diagnostics', 10)
@@ -37,9 +45,10 @@ class EB15SerialBridge(Node):
         )
 
         # Target JointState Subscriber (from GUI sliders or MoveIt)
+        sub_topic = '/eb15/target_joint_states' if self.feedback_mode else '/joint_states'
         self.target_sub = self.create_subscription(
             JointState,
-            '/eb15/target_joint_states',
+            sub_topic,
             self.target_joint_state_callback,
             10
         )

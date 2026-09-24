@@ -188,7 +188,7 @@ bool isElMaxHit() { return digitalRead(ELBOW_LIMIT_MAX_PIN)    == (LIMIT_SWITCH_
 //  MOTOR CONTROL HELPERS
 // ═══════════════════════════════════════════════════════════════
 void enableAllMotors(bool enable) {
-  uint8_lvl = enable ? TB6600_ENABLE_LEVEL : TB6600_DISABLE_LEVEL;
+  uint8_t lvl = enable ? TB6600_ENABLE_LEVEL : TB6600_DISABLE_LEVEL;
   digitalWrite(ENA_PIN_1, lvl);
   digitalWrite(ENA_PIN_2, lvl);
   digitalWrite(ENA_PIN_3, lvl);
