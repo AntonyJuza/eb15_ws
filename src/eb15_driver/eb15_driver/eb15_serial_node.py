@@ -96,6 +96,8 @@ class EB15SerialBridge(Node):
 
         self.home_sub = self.create_subscription(Empty, '/eb15/home', self.home_callback, 10)
         self.zero_sub = self.create_subscription(Empty, '/eb15/set_zero', self.set_zero_callback, 10)
+        self.cal_sub = self.create_subscription(Empty, '/eb15/calibrate', self.calibrate_callback, 10)
+        self.raw_sub = self.create_subscription(String, '/eb15/send_cmd', self.raw_cmd_callback, 10)
 
         # MoveIt Action Servers
         self._action_server = ActionServer(
@@ -246,15 +248,30 @@ class EB15SerialBridge(Node):
 
     def home_callback(self, msg: Empty):
         try:
-            self.out_queue.put_nowait('$HOME\n')
-            self.get_logger().info('Queued $HOME command to Arduino')
+            self.out_queue.put_nowait('CAL\n')
+            self.get_logger().info('Sent CAL (Home) command to Arduino')
         except queue.Full:
             pass
 
     def set_zero_callback(self, msg: Empty):
         try:
-            self.out_queue.put_nowait('$SET_ZERO\n')
-            self.get_logger().info('Queued $SET_ZERO command to Arduino')
+            self.out_queue.put_nowait('SET_ZERO\n')
+            self.get_logger().info('Sent SET_ZERO command to Arduino')
+        except queue.Full:
+            pass
+
+    def calibrate_callback(self, msg: Empty):
+        try:
+            self.out_queue.put_nowait('CAL\n')
+            self.get_logger().info('Sent CAL (Full Arm Calibration) command to Arduino')
+        except queue.Full:
+            pass
+
+    def raw_cmd_callback(self, msg: String):
+        cmd = msg.data.strip().upper()
+        try:
+            self.out_queue.put_nowait(f'{cmd}\n')
+            self.get_logger().info(f'Sent raw command to Arduino: {cmd}')
         except queue.Full:
             pass
 
