@@ -1,0 +1,45 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 100  # Hz simulation control cycle
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    gripper_controller:
+      type: position_controllers/GripperActionController
+
+arm_controller:
+  ros__parameters:
+    joints:
+      - joint1
+      - joint2
+      - joint3
+      - wrist_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    state_publish_rate: 50.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    open_loop_control: false
+    constraints:
+      stopped_velocity_tolerance: 0.05
+      goal_time: 0.5
+      joint1: { trajectory: 0.2, goal: 0.05 }
+      joint2: { trajectory: 0.2, goal: 0.05 }
+      joint3: { trajectory: 0.2, goal: 0.05 }
+      wrist_joint: { trajectory: 0.2, goal: 0.05 }
+
+gripper_controller:
+  ros__parameters:
+    joint: gripper_left_joint
+    action_monitor_rate: 20.0
+    goal_tolerance: 0.002
+    allow_stalling: true
+    stall_velocity_threshold: 0.001
+    stall_timeout: 0.5

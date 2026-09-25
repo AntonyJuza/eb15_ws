@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="eb15_ros2_control" params="name:=EB15GazeboSim">
+    <ros2_control name="${name}" type="system">
+      <hardware>
+        <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+      </hardware>
+
+      <!-- Joint 1: Base Pan / Yaw -->
+      <joint name="joint1">
+        <command_interface name="position">
+          <param name="min">-3.14159</param>
+          <param name="max">3.14159</param>
+        </command_interface>
+        <state_interface name="position">
+          <param name="initial_value">0.0</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+        <state_interface name="effort"/>
+      </joint>
+
+      <!-- Joint 2: Shoulder Pitch -->
+      <joint name="joint2">
+        <command_interface name="position">
+          <param name="min">-1.570796</param>
+          <param name="max">1.570796</param>
+        </command_interface>
+        <state_interface name="position">
+          <param name="initial_value">0.0</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+        <state_interface name="effort"/>
+      </joint>
+
+      <!-- Joint 3: Elbow Pitch -->
+      <joint name="joint3">
+        <command_interface name="position">
+          <param name="min">-2.700</param>
+          <param name="max">2.700</param>
+        </command_interface>
+        <state_interface name="position">
+          <param name="initial_value">0.0</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+        <state_interface name="effort"/>
+      </joint>
+
+      <!-- Joint 4: Wrist Roll -->
+      <joint name="wrist_joint">
+        <command_interface name="position">
+          <param name="min">-1.570796</param>
+          <param name="max">1.570796</param>
+        </command_interface>
+        <state_interface name="position">
+          <param name="initial_value">0.0</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+        <state_interface name="effort"/>
+      </joint>
+
+      <!-- Joint 5: Gripper Left Finger -->
+      <joint name="gripper_left_joint">
+        <command_interface name="position">
+          <param name="min">-0.016</param>
+          <param name="max">0.012</param>
+        </command_interface>
+        <state_interface name="position">
+          <param name="initial_value">0.0</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+        <state_interface name="effort"/>
+      </joint>
+
+      <!-- Gripper Right Finger (Mimics Left in Simulation) -->
+      <joint name="gripper_right_joint">
+        <param name="mimic">gripper_left_joint</param>
+        <param name="multiplier">1.0</param>
+        <command_interface name="position"/>
+        <state_interface name="position">
+          <param name="initial_value">0.0</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+        <state_interface name="effort"/>
+      </joint>
+
+    </ros2_control>
+  </xacro:macro>
+
+</robot>

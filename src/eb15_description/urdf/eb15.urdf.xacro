@@ -3,6 +3,8 @@
 
   <!-- Arguments -->
   <xacro:arg name="use_gripper" default="true"/>
+  <xacro:arg name="use_sim" default="false"/>
+  <xacro:arg name="controllers_yaml" default="$(find eb15_description)/config/eb15_controllers.yaml"/>
 
   <!-- Core Robot Description Modules -->
   <xacro:include filename="materials.xacro"/>
@@ -14,6 +16,15 @@
   <!-- End Effector (EBG-20 Adaptive Gripper) -->
   <xacro:if value="$(arg use_gripper)">
     <xacro:include filename="gripper.xacro"/>
+  </xacro:if>
+
+  <!-- Gazebo Physics & ros2_control Simulation Plugins -->
+  <xacro:if value="$(arg use_sim)">
+    <xacro:include filename="eb15.ros2_control.xacro"/>
+    <xacro:include filename="eb15.gazebo.xacro"/>
+
+    <xacro:eb15_ros2_control name="EB15GazeboSim"/>
+    <xacro:eb15_gazebo controllers_yaml="$(arg controllers_yaml)"/>
   </xacro:if>
 
 </robot>
