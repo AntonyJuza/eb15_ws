@@ -34,6 +34,7 @@ class EB15SerialBridge(Node):
         self.declare_parameter('baud_rate', 115200)
         self.declare_parameter('joint_names', ['joint1', 'joint2', 'joint3', 'wrist_joint', 'gripper_left_joint'])
         self.declare_parameter('feedback_mode', False)
+        self.declare_parameter('invert_joint3_encoder', True)
 
         self.port_name = self.get_parameter('serial_port').get_parameter_value().string_value
         self.baud_rate = self.get_parameter('baud_rate').get_parameter_value().integer_value
@@ -43,6 +44,12 @@ class EB15SerialBridge(Node):
             self.feedback_mode = feedback_raw.lower() in ('true', '1', 'yes')
         else:
             self.feedback_mode = bool(feedback_raw)
+
+        inv_j3_raw = self.get_parameter('invert_joint3_encoder').value
+        if isinstance(inv_j3_raw, str):
+            self.invert_joint3_encoder = inv_j3_raw.lower() in ('true', '1', 'yes')
+        else:
+            self.invert_joint3_encoder = bool(inv_j3_raw)
 
         self.get_logger().info(
             f'Initializing EB-15 Hardware Bridge on {self.port_name} @ {self.baud_rate} baud '
@@ -179,7 +186,8 @@ class EB15SerialBridge(Node):
             try:
                 self.meas_q1 = float(parts[1])
                 self.meas_q2 = float(parts[2])
-                self.meas_q3 = float(parts[3])
+                q3_val = float(parts[3])
+                self.meas_q3 = -q3_val if self.invert_joint3_encoder else q3_val
                 self.last_state_time = time.time()
 
                 # Publish live physical encoder state to /joint_states
