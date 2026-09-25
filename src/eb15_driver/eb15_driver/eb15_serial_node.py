@@ -71,8 +71,7 @@ class EB15SerialBridge(Node):
         self.cb_group = ReentrantCallbackGroup()
 
         # Publishers
-        pub_topic = '/joint_states' if self.feedback_mode else '/eb15/measured_joint_states'
-        self.joint_pub = self.create_publisher(JointState, pub_topic, 10)
+        self.joint_pub = self.create_publisher(JointState, '/eb15/measured_joint_states', 10)
         self.direct_joint_pub = self.create_publisher(JointState, '/joint_states', 10)
         self.diag_pub = self.create_publisher(String, '/eb15/diagnostics', 10)
 
@@ -174,24 +173,30 @@ class EB15SerialBridge(Node):
 
     def _parse_state(self, line: str):
         parts = line.split(',')
-        if len(parts) >= 6:
+        if len(parts) >= 4:
             try:
                 self.meas_q1 = float(parts[1])
                 self.meas_q2 = float(parts[2])
                 self.meas_q3 = float(parts[3])
+                meas_wrist = float(parts[4]) if len(parts) > 4 else self.cmd_wrist
+                meas_grip = float(parts[5]) if len(parts) > 5 else self.cmd_grip
 
+                # Always publish physical encoder feedback to /eb15/measured_joint_states
+                msg = JointState()
+                msg.header.stamp = self.get_clock().now().to_msg()
+                msg.name = self.joint_names
+                msg.position = [
+                    self.meas_q1,
+                    self.meas_q2,
+                    self.meas_q3,
+                    meas_wrist,
+                    meas_grip,
+                ]
+                self.joint_pub.publish(msg)
+
+                # If feedback_mode is active, also publish directly to /joint_states
                 if self.feedback_mode:
-                    msg = JointState()
-                    msg.header.stamp = self.get_clock().now().to_msg()
-                    msg.name = self.joint_names
-                    msg.position = [
-                        self.meas_q1,
-                        self.meas_q2,
-                        self.meas_q3,
-                        self.cmd_wrist,
-                        self.cmd_grip,
-                    ]
-                    self.joint_pub.publish(msg)
+                    self.direct_joint_pub.publish(msg)
             except ValueError:
                 pass
 
