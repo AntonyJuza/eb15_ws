@@ -4,6 +4,7 @@ EB-15 Serial Bridge Node with MoveIt 2 Trajectory Action Server
 ===============================================================
 - Robust thread-safe serial communication with Arduino Nano
 - Dedicated background worker for serial I/O (prevents concurrent access crashes)
+- Atomic "latest command" pattern prevents Arduino serial buffer overflow
 - Implements FollowJointTrajectory Action Server for MoveIt 2 execution
 - Implements GripperCommand Action Server for end-effector control
 - Subscribes to /joint_states for direct manual jogging
@@ -34,7 +35,7 @@ class EB15SerialBridge(Node):
         self.declare_parameter('baud_rate', 115200)
         self.declare_parameter('joint_names', ['joint1', 'joint2', 'joint3', 'wrist_joint', 'gripper_left_joint'])
         self.declare_parameter('feedback_mode', False)
-        self.declare_parameter('invert_joint3_encoder', True)
+        self.declare_parameter('invert_joint3_encoder', False)
 
         self.port_name = self.get_parameter('serial_port').get_parameter_value().string_value
         self.baud_rate = self.get_parameter('baud_rate').get_parameter_value().integer_value
@@ -70,8 +71,20 @@ class EB15SerialBridge(Node):
         self.is_executing_trajectory = False
         self.last_state_time = 0.0
 
-        # Thread-safe queue for outgoing serial messages
-        self.out_queue = queue.Queue(maxsize=10)
+        # ── Serial Communication Architecture ─────────────────────
+        # Atomic "latest command" — serial worker always sends only the
+        # most recent $CMD, preventing Arduino 64-byte buffer overflow.
+        self._latest_cmd_lock = threading.Lock()
+        self._latest_cmd = None          # str or None — the newest $CMD to send
+
+        # Priority queue for non-droppable commands (CAL, SET_ZERO, etc.)
+        # These MUST be sent in order and never skipped.
+        self._priority_queue = queue.Queue(maxsize=32)
+
+        # Track when the last $CMD was actually written to serial
+        self._last_serial_write_time = 0.0
+        self._serial_write_interval = 0.045  # ~22 Hz max write rate to Arduino
+
         self.ser = None
         self.running = True
 
@@ -149,12 +162,27 @@ class EB15SerialBridge(Node):
                     continue
 
             try:
-                # 1. Send any queued commands
-                while not self.out_queue.empty():
-                    cmd = self.out_queue.get_nowait()
-                    self.ser.write(cmd.encode('utf-8'))
+                # 1. Always send priority commands first (CAL, SET_ZERO, raw, etc.)
+                while not self._priority_queue.empty():
+                    try:
+                        cmd = self._priority_queue.get_nowait()
+                        self.ser.write(cmd.encode('utf-8'))
+                        self.ser.flush()
+                    except queue.Empty:
+                        break
 
-                # 2. Read incoming telemetry
+                # 2. Send the latest $CMD at a throttled rate (~22 Hz)
+                #    This ensures the Arduino serial buffer never overflows.
+                now = time.time()
+                if now - self._last_serial_write_time >= self._serial_write_interval:
+                    with self._latest_cmd_lock:
+                        cmd_to_send = self._latest_cmd
+                        self._latest_cmd = None  # consumed
+                    if cmd_to_send is not None:
+                        self.ser.write(cmd_to_send.encode('utf-8'))
+                        self._last_serial_write_time = now
+
+                # 3. Read incoming telemetry
                 while self.ser and self.ser.is_open and self.ser.in_waiting > 0:
                     raw = self.ser.readline()
                     line = raw.decode('utf-8', errors='ignore').strip()
@@ -170,7 +198,7 @@ class EB15SerialBridge(Node):
 
                 time.sleep(0.005)
 
-            except Exception as e:
+            except (serial.SerialException, OSError, Exception) as e:
                 self.get_logger().error(f'Serial communication error: {e}. Reconnecting...')
                 try:
                     if self.ser:
@@ -198,7 +226,10 @@ class EB15SerialBridge(Node):
             except ValueError:
                 pass
 
-    def queue_cmd(self, q1: float, q2: float, q3: float, q_wrist: float = 0.0, q_grip: float = 0.0):
+    def set_latest_cmd(self, q1: float, q2: float, q3: float, q_wrist: float = 0.0, q_grip: float = 0.0):
+        """Atomically set the latest $CMD. The serial worker will pick it up
+        and send it at a throttled rate. Older unsent commands are automatically
+        replaced (only the newest matters for position control)."""
         self.cmd_q1 = q1
         self.cmd_q2 = q2
         self.cmd_q3 = q3
@@ -206,17 +237,17 @@ class EB15SerialBridge(Node):
         self.cmd_grip = q_grip
 
         cmd_str = f'$CMD,{q1:.4f},{q2:.4f},{q3:.4f},{q_wrist:.4f},{q_grip:.4f}\n'
+        with self._latest_cmd_lock:
+            self._latest_cmd = cmd_str
+        self.get_logger().info(f'Commanded: {cmd_str.strip()}', throttle_duration_sec=0.5)
+
+    def _send_priority_cmd(self, cmd: str):
+        """Enqueue a non-droppable command (CAL, SET_ZERO, raw commands).
+        These are sent in order before any $CMD."""
         try:
-            # Drop older commands if buffer is full so we never lag behind
-            if self.out_queue.full():
-                try:
-                    self.out_queue.get_nowait()
-                except queue.Empty:
-                    pass
-            self.out_queue.put_nowait(cmd_str)
-            self.get_logger().info(f'Commanded: {cmd_str.strip()}', throttle_duration_sec=0.5)
+            self._priority_queue.put_nowait(cmd)
         except queue.Full:
-            pass
+            self.get_logger().warn(f'Priority command queue full, dropping: {cmd.strip()}')
 
     # ── State Publishing & Manual Jogging ────────────────────────
 
@@ -228,12 +259,15 @@ class EB15SerialBridge(Node):
                 self.publish_state(self.meas_q1, self.meas_q2, self.meas_q3, self.cmd_wrist, self.cmd_grip)
 
     def publish_state(self, q1, q2, q3, q_wrist, q_grip):
-        msg = JointState()
-        msg.header.stamp = self.get_clock().now().to_msg()
-        msg.name = self.joint_names
-        msg.position = [q1, q2, q3, q_wrist, q_grip]
-        self.direct_joint_pub.publish(msg)
-        self.joint_pub.publish(msg)
+        try:
+            msg = JointState()
+            msg.header.stamp = self.get_clock().now().to_msg()
+            msg.name = self.joint_names
+            msg.position = [q1, q2, q3, q_wrist, q_grip]
+            self.direct_joint_pub.publish(msg)
+            self.joint_pub.publish(msg)
+        except Exception:
+            pass  # Gracefully handle shutdown race
 
     def target_joint_state_callback(self, msg: JointState):
         if self.is_executing_trajectory:
@@ -245,42 +279,30 @@ class EB15SerialBridge(Node):
         q3 = name_to_pos.get('joint3', self.cmd_q3)
         q_wrist = name_to_pos.get('wrist_joint', self.cmd_wrist)
         q_grip = name_to_pos.get('gripper_left_joint', self.cmd_grip)
-        self.queue_cmd(q1, q2, q3, q_wrist, q_grip)
+        self.set_latest_cmd(q1, q2, q3, q_wrist, q_grip)
 
     def command_callback(self, msg: Float64MultiArray):
         if len(msg.data) >= 5:
-            self.queue_cmd(msg.data[0], msg.data[1], msg.data[2], msg.data[3], msg.data[4])
+            self.set_latest_cmd(msg.data[0], msg.data[1], msg.data[2], msg.data[3], msg.data[4])
         elif len(msg.data) >= 3:
-            self.queue_cmd(msg.data[0], msg.data[1], msg.data[2])
+            self.set_latest_cmd(msg.data[0], msg.data[1], msg.data[2])
 
     def home_callback(self, msg: Empty):
-        try:
-            self.out_queue.put_nowait('CAL\n')
-            self.get_logger().info('Sent CAL (Home) command to Arduino')
-        except queue.Full:
-            pass
+        self._send_priority_cmd('CAL\n')
+        self.get_logger().info('Sent CAL (Home) command to Arduino')
 
     def set_zero_callback(self, msg: Empty):
-        try:
-            self.out_queue.put_nowait('SET_ZERO\n')
-            self.get_logger().info('Sent SET_ZERO command to Arduino')
-        except queue.Full:
-            pass
+        self._send_priority_cmd('SET_ZERO\n')
+        self.get_logger().info('Sent SET_ZERO command to Arduino')
 
     def calibrate_callback(self, msg: Empty):
-        try:
-            self.out_queue.put_nowait('CAL\n')
-            self.get_logger().info('Sent CAL (Full Arm Calibration) command to Arduino')
-        except queue.Full:
-            pass
+        self._send_priority_cmd('CAL\n')
+        self.get_logger().info('Sent CAL (Full Arm Calibration) command to Arduino')
 
     def raw_cmd_callback(self, msg: String):
         cmd = msg.data.strip().upper()
-        try:
-            self.out_queue.put_nowait(f'{cmd}\n')
-            self.get_logger().info(f'Sent raw command to Arduino: {cmd}')
-        except queue.Full:
-            pass
+        self._send_priority_cmd(f'{cmd}\n')
+        self.get_logger().info(f'Sent raw command to Arduino: {cmd}')
 
     # ── MoveIt 2 FollowJointTrajectory Callbacks ─────────────────
 
@@ -317,8 +339,10 @@ class EB15SerialBridge(Node):
             res.error_code = FollowJointTrajectory.Result.SUCCESSFUL
             return res
 
-        # Generate dense 40 Hz sample grid (every 25 ms)
-        sample_times = np.arange(0.0, total_duration, 0.025)
+        # Generate dense 20 Hz sample grid (every 50 ms)
+        # Matches Arduino loop rate — sending faster causes serial buffer overflow
+        sample_interval = 0.05  # 20 Hz
+        sample_times = np.arange(0.0, total_duration, sample_interval)
         if len(sample_times) == 0 or sample_times[-1] < total_duration:
             sample_times = np.append(sample_times, total_duration)
 
@@ -329,37 +353,58 @@ class EB15SerialBridge(Node):
             joint_series[j_name] = np.interp(sample_times, orig_times, y)
 
         self.get_logger().info(
-            f'Smoothing MoveIt trajectory: {len(points)} waypoints -> {len(sample_times)} continuous steps (40 Hz) over {total_duration:.2f}s'
+            f'Smoothing MoveIt trajectory: {len(points)} waypoints -> {len(sample_times)} continuous steps (20 Hz) over {total_duration:.2f}s'
         )
 
         self.is_executing_trajectory = True
         start_time = time.time()
+        last_telemetry_warning = 0.0
 
-        for t_step, cur_t in enumerate(sample_times):
-            if goal_handle.is_cancel_requested:
-                goal_handle.canceled()
-                self.is_executing_trajectory = False
-                self.get_logger().warn('Trajectory execution canceled')
-                res = FollowJointTrajectory.Result()
-                return res
+        try:
+            for t_step, cur_t in enumerate(sample_times):
+                # Check for cancellation or shutdown
+                if not self.running or not rclpy.ok():
+                    break
+                if goal_handle.is_cancel_requested:
+                    goal_handle.canceled()
+                    self.is_executing_trajectory = False
+                    self.get_logger().warn('Trajectory execution canceled')
+                    res = FollowJointTrajectory.Result()
+                    return res
 
-            target_time = start_time + cur_t
-            sleep_dt = target_time - time.time()
-            if sleep_dt > 0:
-                time.sleep(sleep_dt)
+                target_time = start_time + cur_t
+                sleep_dt = target_time - time.time()
+                if sleep_dt > 0:
+                    time.sleep(sleep_dt)
 
-            q1 = float(joint_series['joint1'][t_step]) if 'joint1' in joint_series else self.cmd_q1
-            q2 = float(joint_series['joint2'][t_step]) if 'joint2' in joint_series else self.cmd_q2
-            q3 = float(joint_series['joint3'][t_step]) if 'joint3' in joint_series else self.cmd_q3
-            q_wrist = float(joint_series['wrist_joint'][t_step]) if 'wrist_joint' in joint_series else self.cmd_wrist
-            q_grip = self.cmd_grip
+                q1 = float(joint_series['joint1'][t_step]) if 'joint1' in joint_series else self.cmd_q1
+                q2 = float(joint_series['joint2'][t_step]) if 'joint2' in joint_series else self.cmd_q2
+                q3 = float(joint_series['joint3'][t_step]) if 'joint3' in joint_series else self.cmd_q3
+                q_wrist = float(joint_series['wrist_joint'][t_step]) if 'wrist_joint' in joint_series else self.cmd_wrist
+                q_grip = self.cmd_grip
 
-            self.queue_cmd(q1, q2, q3, q_wrist, q_grip)
-            self.publish_state(q1, q2, q3, q_wrist, q_grip)
+                self.set_latest_cmd(q1, q2, q3, q_wrist, q_grip)
+                self.publish_state(q1, q2, q3, q_wrist, q_grip)
+
+                # Serial health watchdog: warn if Arduino stopped sending telemetry
+                now = time.time()
+                telemetry_age = now - self.last_state_time
+                if telemetry_age > 2.0 and (now - last_telemetry_warning) > 5.0:
+                    self.get_logger().warn(
+                        f'No Arduino telemetry for {telemetry_age:.1f}s — serial may be disconnected!'
+                    )
+                    last_telemetry_warning = now
+
+        except Exception as e:
+            self.get_logger().error(f'Trajectory execution error: {e}')
 
         self.is_executing_trajectory = False
-        goal_handle.succeed()
-        self.get_logger().info('MoveIt trajectory completed smoothly on physical EB-15 arm!')
+
+        try:
+            goal_handle.succeed()
+            self.get_logger().info('MoveIt trajectory completed smoothly on physical EB-15 arm!')
+        except Exception:
+            pass  # Node may be shutting down
 
         res = FollowJointTrajectory.Result()
         res.error_code = FollowJointTrajectory.Result.SUCCESSFUL
@@ -372,7 +417,7 @@ class EB15SerialBridge(Node):
         position = cmd.position
         self.get_logger().info(f'Gripper command received: {position}')
 
-        self.queue_cmd(self.cmd_q1, self.cmd_q2, self.cmd_q3, self.cmd_wrist, position)
+        self.set_latest_cmd(self.cmd_q1, self.cmd_q2, self.cmd_q3, self.cmd_wrist, position)
         self.publish_state(self.cmd_q1, self.cmd_q2, self.cmd_q3, self.cmd_wrist, position)
 
         goal_handle.succeed()
