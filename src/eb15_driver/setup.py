@@ -23,6 +23,7 @@ setup(
     entry_points={
         'console_scripts': [
             'eb15_serial_node = eb15_driver.eb15_serial_node:main',
+            'run_sequence = eb15_driver.run_sequence:main',
         ],
     },
 )
