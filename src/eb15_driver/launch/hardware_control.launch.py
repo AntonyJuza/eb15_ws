@@ -39,6 +39,24 @@ def generate_launch_description():
         description='If true, RViz shows only physical encoder feedback. If false, RViz moves immediately with GUI sliders.'
     )
 
+    unity_arg = DeclareLaunchArgument(
+        'unity',
+        default_value='true',
+        description='Launch Unity Digital Twin bridge node'
+    )
+
+    unity_ip_arg = DeclareLaunchArgument(
+        'unity_ip',
+        default_value='127.0.0.1',
+        description='IP address of Unity workstation'
+    )
+
+    unity_port_arg = DeclareLaunchArgument(
+        'unity_port',
+        default_value='5005',
+        description='UDP port of Unity Digital Twin'
+    )
+
     feedback_conf = LaunchConfiguration('feedback')
 
     # CycloneDDS environment variable to avoid FastCDR issues on ROS 2 Jazzy
@@ -113,15 +131,33 @@ def generate_launch_description():
         arguments=['-d', default_rviz_path]
     )
 
+    # Unity Digital Twin Bridge Node
+    unity_bridge_node = Node(
+        package='eb15_driver',
+        executable='unity_bridge_node',
+        name='unity_bridge_node',
+        output='screen',
+        condition=IfCondition(LaunchConfiguration('unity')),
+        parameters=[{
+            'unity_ip': LaunchConfiguration('unity_ip'),
+            'unity_port': LaunchConfiguration('unity_port'),
+            'send_rate_hz': 50.0,
+        }]
+    )
+
     return LaunchDescription([
         serial_port_arg,
         baud_rate_arg,
         gui_arg,
         feedback_arg,
+        unity_arg,
+        unity_ip_arg,
+        unity_port_arg,
         set_rmw_env,
         robot_state_publisher_node,
         eb15_driver_node,
         joint_state_publisher_gui_direct,
         joint_state_publisher_gui_feedback,
+        unity_bridge_node,
         rviz_node,
     ])

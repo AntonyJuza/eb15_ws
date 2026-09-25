@@ -52,6 +52,24 @@ def generate_launch_description():
         description='Launch rosbridge_server WebSocket on port 9090 for Unity connections'
     )
 
+    unity_arg = DeclareLaunchArgument(
+        'unity',
+        default_value='true',
+        description='Enable Unity Digital Twin UDP bridge'
+    )
+
+    unity_ip_arg = DeclareLaunchArgument(
+        'unity_ip',
+        default_value='127.0.0.1',
+        description='IP address of Unity Digital Twin simulation machine'
+    )
+
+    unity_port_arg = DeclareLaunchArgument(
+        'unity_port',
+        default_value='5005',
+        description='UDP port on which Unity is listening'
+    )
+
     # ── CycloneDDS RMW for reliable ROS 2 Jazzy message delivery ──
     set_rmw_env = SetEnvironmentVariable(
         name="RMW_IMPLEMENTATION",
@@ -115,6 +133,20 @@ def generate_launch_description():
         condition=IfCondition(LaunchConfiguration("gui")),
     )
 
+    # ── Unity Digital Twin Bridge Node ─────────────────────────
+    unity_bridge_node = Node(
+        package="eb15_driver",
+        executable="unity_bridge_node",
+        name="unity_bridge_node",
+        output="screen",
+        condition=IfCondition(LaunchConfiguration("unity")),
+        parameters=[{
+            "unity_ip": LaunchConfiguration("unity_ip"),
+            "unity_port": LaunchConfiguration("unity_port"),
+            "send_rate_hz": 50.0,
+        }],
+    )
+
     # ── MoveIt Move Group ──────────────────────────────────────
     move_group_node = Node(
         package="moveit_ros_move_group",
@@ -160,10 +192,14 @@ def generate_launch_description():
         baud_rate_arg,
         gui_arg,
         rosbridge_arg,
+        unity_arg,
+        unity_ip_arg,
+        unity_port_arg,
         set_rmw_env,
         robot_state_publisher_node,
         eb15_driver_node,
         joint_state_publisher_gui_node,
+        unity_bridge_node,
         move_group_node,
         rviz_node,
         rosbridge_launch,
