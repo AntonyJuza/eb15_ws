@@ -61,6 +61,7 @@ class EB15SerialBridge(Node):
         self.meas_q3 = 0.0
 
         self.is_executing_trajectory = False
+        self.last_state_time = 0.0
 
         # Thread-safe queue for outgoing serial messages
         self.out_queue = queue.Queue(maxsize=10)
@@ -85,10 +86,10 @@ class EB15SerialBridge(Node):
             callback_group=self.cb_group,
         )
 
-        sub_topic = '/eb15/target_joint_states' if self.feedback_mode else '/joint_states'
+        # Target JointState Subscriber (for GUI sliders or manual setpoint commands)
         self.target_sub = self.create_subscription(
             JointState,
-            sub_topic,
+            '/eb15/target_joint_states',
             self.target_joint_state_callback,
             10,
             callback_group=self.cb_group,
@@ -135,7 +136,7 @@ class EB15SerialBridge(Node):
                     self.ser = serial.Serial(self.port_name, self.baud_rate, timeout=0.05)
                     self.get_logger().info(f'Connected to Arduino Nano on {self.port_name}')
                     time.sleep(2.0)
-                except serial.SerialException as e:
+                except Exception as e:
                     self.get_logger().warn(f'Waiting for {self.port_name}: {e}', throttle_duration_sec=3.0)
                     time.sleep(1.0)
                     continue
@@ -147,7 +148,7 @@ class EB15SerialBridge(Node):
                     self.ser.write(cmd.encode('utf-8'))
 
                 # 2. Read incoming telemetry
-                while self.ser.in_waiting > 0:
+                while self.ser and self.ser.is_open and self.ser.in_waiting > 0:
                     raw = self.ser.readline()
                     line = raw.decode('utf-8', errors='ignore').strip()
                     if not line:
@@ -162,8 +163,8 @@ class EB15SerialBridge(Node):
 
                 time.sleep(0.005)
 
-            except serial.SerialException as e:
-                self.get_logger().error(f'Serial communication error: {e}')
+            except Exception as e:
+                self.get_logger().error(f'Serial communication error: {e}. Reconnecting...')
                 try:
                     if self.ser:
                         self.ser.close()
@@ -179,19 +180,13 @@ class EB15SerialBridge(Node):
                 self.meas_q1 = float(parts[1])
                 self.meas_q2 = float(parts[2])
                 self.meas_q3 = float(parts[3])
+                self.last_state_time = time.time()
 
-                if self.feedback_mode:
-                    msg = JointState()
-                    msg.header.stamp = self.get_clock().now().to_msg()
-                    msg.name = self.joint_names
-                    msg.position = [
-                        self.meas_q1,
-                        self.meas_q2,
-                        self.meas_q3,
-                        self.cmd_wrist,
-                        self.cmd_grip,
-                    ]
-                    self.joint_pub.publish(msg)
+                # Publish live physical encoder state to /joint_states
+                # This ensures moving the physical arm immediately updates the URDF in RViz!
+                if not self.is_executing_trajectory:
+                    self.publish_state(self.meas_q1, self.meas_q2, self.meas_q3, self.cmd_wrist, self.cmd_grip)
+
             except ValueError:
                 pass
 
@@ -218,8 +213,11 @@ class EB15SerialBridge(Node):
     # ── State Publishing & Manual Jogging ────────────────────────
 
     def publish_heartbeat(self):
-        if not self.feedback_mode and not self.is_executing_trajectory:
-            self.publish_state(self.cmd_q1, self.cmd_q2, self.cmd_q3, self.cmd_wrist, self.cmd_grip)
+        # Guarantee fresh timestamp on /joint_states so MoveIt NEVER starves or times out
+        if not self.is_executing_trajectory:
+            now = time.time()
+            if (now - self.last_state_time) > 0.045:
+                self.publish_state(self.meas_q1, self.meas_q2, self.meas_q3, self.cmd_wrist, self.cmd_grip)
 
     def publish_state(self, q1, q2, q3, q_wrist, q_grip):
         msg = JointState()
@@ -227,6 +225,7 @@ class EB15SerialBridge(Node):
         msg.name = self.joint_names
         msg.position = [q1, q2, q3, q_wrist, q_grip]
         self.direct_joint_pub.publish(msg)
+        self.joint_pub.publish(msg)
 
     def target_joint_state_callback(self, msg: JointState):
         if self.is_executing_trajectory:

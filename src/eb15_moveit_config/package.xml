@@ -22,6 +22,7 @@
   <exec_depend>rviz2</exec_depend>
   <exec_depend>eb15_description</exec_depend>
   <exec_depend>eb15_driver</exec_depend>
+  <exec_depend>rosbridge_server</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

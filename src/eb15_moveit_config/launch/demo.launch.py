@@ -11,9 +11,10 @@ Launches:
 
 import os
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration
+from launch.launch_description_sources import AnyLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from moveit_configs_utils import MoveItConfigsBuilder
@@ -43,6 +44,12 @@ def generate_launch_description():
         'gui',
         default_value='false',
         description='Launch joint_state_publisher_gui sliders window'
+    )
+
+    rosbridge_arg = DeclareLaunchArgument(
+        'rosbridge',
+        default_value='true',
+        description='Launch rosbridge_server WebSocket on port 9090 for Unity connections'
     )
 
     # ── CycloneDDS RMW for reliable ROS 2 Jazzy message delivery ──
@@ -135,15 +142,29 @@ def generate_launch_description():
         ],
     )
 
+    # ── Rosbridge WebSocket Server (for Unity / Web) ───────────
+    rosbridge_launch = IncludeLaunchDescription(
+        AnyLaunchDescriptionSource(
+            PathJoinSubstitution([
+                FindPackageShare('rosbridge_server'),
+                'launch',
+                'rosbridge_websocket_launch.xml'
+            ])
+        ),
+        condition=IfCondition(LaunchConfiguration('rosbridge'))
+    )
+
     return LaunchDescription([
         use_hardware_arg,
         serial_port_arg,
         baud_rate_arg,
         gui_arg,
+        rosbridge_arg,
         set_rmw_env,
         robot_state_publisher_node,
         eb15_driver_node,
         joint_state_publisher_gui_node,
         move_group_node,
         rviz_node,
+        rosbridge_launch,
     ])

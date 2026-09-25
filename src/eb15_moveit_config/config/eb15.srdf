@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  EB-15 Semantic Robot Description Format (SRDF)
+  ===============================================
+  Defines planning groups, default poses, end effectors,
+  and disabled collision pairs for MoveIt 2.
+-->
+<robot name="eb15">
+
+  <!-- ============================================ -->
+  <!--  PLANNING GROUP: arm (5-DOF kinematic chain) -->
+  <!-- ============================================ -->
+  <group name="arm">
+    <chain base_link="base_link" tip_link="tool0"/>
+  </group>
+
+  <!-- ============================================ -->
+  <!--  PLANNING GROUP: gripper                     -->
+  <!-- ============================================ -->
+  <group name="gripper">
+    <joint name="gripper_left_joint"/>
+    <joint name="gripper_right_joint"/>
+  </group>
+
+  <!-- ============================================ -->
+  <!--  END EFFECTOR                                -->
+  <!-- ============================================ -->
+  <end_effector name="gripper" parent_link="tool0" group="gripper"/>
+
+  <!-- ============================================ -->
+  <!--  NAMED POSES                                 -->
+  <!-- ============================================ -->
+
+  <!-- Upright Candle Pose (all joints at 0) -->
+  <group_state name="home" group="arm">
+    <joint name="joint1" value="0.0"/>
+    <joint name="joint2" value="0.0"/>
+    <joint name="joint3" value="0.0"/>
+    <joint name="wrist_joint" value="0.0"/>
+  </group_state>
+
+  <!-- Ready Pose (arm slightly forward, elbow bent) -->
+  <group_state name="ready" group="arm">
+    <joint name="joint1" value="0.0"/>
+    <joint name="joint2" value="0.3"/>
+    <joint name="joint3" value="-0.6"/>
+    <joint name="wrist_joint" value="0.0"/>
+  </group_state>
+
+  <!-- Gripper Open -->
+  <group_state name="open" group="gripper">
+    <joint name="gripper_left_joint" value="-0.016"/>
+    <joint name="gripper_right_joint" value="-0.016"/>
+  </group_state>
+
+  <!-- Gripper Closed -->
+  <group_state name="closed" group="gripper">
+    <joint name="gripper_left_joint" value="0.012"/>
+    <joint name="gripper_right_joint" value="0.012"/>
+  </group_state>
+
+  <!-- ============================================ -->
+  <!--  VIRTUAL JOINTS                              -->
+  <!-- ============================================ -->
+  <virtual_joint name="virtual_joint" type="fixed" parent_frame="world" child_link="base_link"/>
+
+  <!-- ============================================ -->
+  <!--  DISABLED COLLISION PAIRS                    -->
+  <!--  (Adjacent links and links that can never    -->
+  <!--   collide due to kinematic constraints)      -->
+  <!-- ============================================ -->
+  <disable_collisions link1="base_link" link2="link1" reason="Adjacent"/>
+  <disable_collisions link1="link1" link2="link2" reason="Adjacent"/>
+  <disable_collisions link1="link2" link2="link3" reason="Adjacent"/>
+  <disable_collisions link1="link3" link2="wrist_base_link" reason="Adjacent"/>
+  <disable_collisions link1="wrist_base_link" link2="wrist_link" reason="Adjacent"/>
+  <disable_collisions link1="wrist_link" link2="gripper_base_link" reason="Adjacent"/>
+  <disable_collisions link1="gripper_base_link" link2="gripper_left_finger_link" reason="Adjacent"/>
+  <disable_collisions link1="gripper_base_link" link2="gripper_right_finger_link" reason="Adjacent"/>
+  <disable_collisions link1="gripper_base_link" link2="gripper_tcp" reason="Adjacent"/>
+
+  <!-- Links that are far enough apart they never collide -->
+  <disable_collisions link1="base_link" link2="link2" reason="Never"/>
+  <disable_collisions link1="base_link" link2="wrist_base_link" reason="Never"/>
+  <disable_collisions link1="base_link" link2="wrist_link" reason="Never"/>
+  <disable_collisions link1="base_link" link2="gripper_base_link" reason="Never"/>
+  <disable_collisions link1="base_link" link2="gripper_left_finger_link" reason="Never"/>
+  <disable_collisions link1="base_link" link2="gripper_right_finger_link" reason="Never"/>
+  <disable_collisions link1="base_link" link2="gripper_tcp" reason="Never"/>
+  <disable_collisions link1="link1" link2="link3" reason="Never"/>
+  <disable_collisions link1="link1" link2="wrist_base_link" reason="Never"/>
+  <disable_collisions link1="link1" link2="wrist_link" reason="Never"/>
+  <disable_collisions link1="link1" link2="gripper_base_link" reason="Never"/>
+  <disable_collisions link1="link1" link2="gripper_left_finger_link" reason="Never"/>
+  <disable_collisions link1="link1" link2="gripper_right_finger_link" reason="Never"/>
+  <disable_collisions link1="link1" link2="gripper_tcp" reason="Never"/>
+  <disable_collisions link1="link2" link2="wrist_base_link" reason="Never"/>
+  <disable_collisions link1="link2" link2="wrist_link" reason="Never"/>
+  <disable_collisions link1="link2" link2="gripper_base_link" reason="Never"/>
+  <disable_collisions link1="link2" link2="gripper_left_finger_link" reason="Never"/>
+  <disable_collisions link1="link2" link2="gripper_right_finger_link" reason="Never"/>
+  <disable_collisions link1="link2" link2="gripper_tcp" reason="Never"/>
+  <disable_collisions link1="link3" link2="wrist_link" reason="Never"/>
+  <disable_collisions link1="link3" link2="gripper_base_link" reason="Never"/>
+  <disable_collisions link1="link3" link2="gripper_left_finger_link" reason="Never"/>
+  <disable_collisions link1="link3" link2="gripper_right_finger_link" reason="Never"/>
+  <disable_collisions link1="link3" link2="gripper_tcp" reason="Never"/>
+  <disable_collisions link1="wrist_base_link" link2="gripper_base_link" reason="Never"/>
+  <disable_collisions link1="wrist_base_link" link2="gripper_left_finger_link" reason="Never"/>
+  <disable_collisions link1="wrist_base_link" link2="gripper_right_finger_link" reason="Never"/>
+  <disable_collisions link1="wrist_base_link" link2="gripper_tcp" reason="Never"/>
+  <disable_collisions link1="wrist_link" link2="gripper_left_finger_link" reason="Never"/>
+  <disable_collisions link1="wrist_link" link2="gripper_right_finger_link" reason="Never"/>
+  <disable_collisions link1="wrist_link" link2="gripper_tcp" reason="Never"/>
+  <disable_collisions link1="gripper_left_finger_link" link2="gripper_tcp" reason="Never"/>
+  <disable_collisions link1="gripper_right_finger_link" link2="gripper_tcp" reason="Never"/>
+
+</robot>
