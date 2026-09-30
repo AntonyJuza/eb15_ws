@@ -686,7 +686,7 @@ void loop() {
       wristServo.write(wrist_servo_angle);
       Serial.print(F("[Wrist] Angle: ")); Serial.println(wrist_servo_angle);
     } else if (cmd == "G_OPEN") {
-      gripper_servo_angle = 140;
+      gripper_servo_angle = 180;
       gripperServo.write(gripper_servo_angle);
       Serial.println(F("[Gripper] Opened."));
     } else if (cmd == "G_CLOSE") {

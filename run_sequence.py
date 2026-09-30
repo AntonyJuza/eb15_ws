@@ -67,7 +67,7 @@ HOME_DEG = {
 }
 
 # Gripper values (in meters of stroke from URDF)
-# Open:  -0.016 m (Arduino 140 deg servo angle)
+# Open:  -0.016 m (Arduino 180 deg servo angle)
 # Close: +0.012 m (Arduino 50 deg servo angle)
 GRIPPER_OPEN_POS = -0.016
 GRIPPER_CLOSE_POS = 0.012

@@ -610,11 +610,11 @@ void handleCommand(String cmd) {
         wristServo.write(wrist_servo_angle);
       }
 
-      // Gripper Servo: [-0.016 (open) .. +0.012 (close)] -> [140 deg .. 50 deg]
+      // Gripper Servo: [-0.016 (open) .. +0.012 (close)] -> [180 deg .. 50 deg]
       if (c4 > 0) {
         float q_grip = cmd.substring(c4 + 1).toFloat();
         float t = constrain((q_grip + 0.016f) / 0.028f, 0.0f, 1.0f);
-        gripper_servo_angle = constrain((int)round(140.0f - t * 90.0f), 45, 145);
+        gripper_servo_angle = constrain((int)round(180.0f - t * 130.0f), 45, 180);
         gripperServo.write(gripper_servo_angle);
       }
     }
@@ -657,7 +657,7 @@ void handleCommand(String cmd) {
     uint8_t t = el_dir_toward_min; el_dir_toward_min = el_dir_toward_max; el_dir_toward_max = t;
     Serial.println(F("# Elbow (J3) direction reversed"));
   } else if (ucmd == "G_OPEN") {
-    gripper_servo_angle = 140;
+    gripper_servo_angle = 180;
     gripperServo.write(gripper_servo_angle);
     Serial.println(F("# Gripper opened"));
   } else if (ucmd == "G_CLOSE") {
