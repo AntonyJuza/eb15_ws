@@ -672,8 +672,10 @@ void handleCommand(String cmd) {
 // ═══════════════════════════════════════════════════════════════
 void setup() {
   Serial.begin(115200);
+  Serial.setTimeout(5); // Non-blocking: max 5ms wait for serial strings
   Wire.begin();
   Wire.setClock(400000);
+  Wire.setWireTimeout(25000, true);
 
   pinMode(SHOULDER_LIMIT_MIN_PIN, INPUT_PULLUP);
   pinMode(SHOULDER_LIMIT_MAX_PIN, INPUT_PULLUP);

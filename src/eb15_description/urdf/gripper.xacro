@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <!-- Gripper Stroke Limits -->
-  <xacro:property name="gripper_open_limit"  value="-0.016"/>
-  <xacro:property name="gripper_close_limit" value="0.012"/>
+  <!-- Gripper Stroke Limits (padded bounds to prevent float32/float64 edge violations in MoveIt) -->
+  <xacro:property name="gripper_open_limit"  value="-0.018"/>
+  <xacro:property name="gripper_close_limit" value="0.015"/>
 
   <!-- ================================================= -->
   <!-- EBG-20 ADAPTIVE ROBOT GRIPPER                     -->

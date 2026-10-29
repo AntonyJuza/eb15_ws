@@ -386,14 +386,19 @@ class EB15SerialBridge(Node):
                 self.set_latest_cmd(q1, q2, q3, q_wrist, q_grip)
                 self.publish_state(q1, q2, q3, q_wrist, q_grip)
 
-                # Serial health watchdog: warn if Arduino stopped sending telemetry
+                # Serial health watchdog: check actual serial port status
                 now = time.time()
-                telemetry_age = now - self.last_state_time
-                if telemetry_age > 2.0 and (now - last_telemetry_warning) > 5.0:
-                    self.get_logger().warn(
-                        f'No Arduino telemetry for {telemetry_age:.1f}s — serial may be disconnected!'
-                    )
-                    last_telemetry_warning = now
+                if self.ser is None or not self.ser.is_open:
+                    if (now - last_telemetry_warning) > 3.0:
+                        self.get_logger().error('Serial port disconnected during trajectory execution!')
+                        last_telemetry_warning = now
+                elif self.feedback_mode:
+                    telemetry_age = now - self.last_state_time
+                    if telemetry_age > 5.0 and (now - last_telemetry_warning) > 5.0:
+                        self.get_logger().warn(
+                            f'No Arduino telemetry for {telemetry_age:.1f}s (feedback_mode=True)'
+                        )
+                        last_telemetry_warning = now
 
         except Exception as e:
             self.get_logger().error(f'Trajectory execution error: {e}')

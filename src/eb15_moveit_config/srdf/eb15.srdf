@@ -19,7 +19,6 @@
   <!-- ============================================ -->
   <group name="gripper">
     <joint name="gripper_left_joint"/>
-    <joint name="gripper_right_joint"/>
   </group>
 
   <!-- ============================================ -->
@@ -50,13 +49,11 @@
   <!-- Gripper Open -->
   <group_state name="open" group="gripper">
     <joint name="gripper_left_joint" value="-0.016"/>
-    <joint name="gripper_right_joint" value="-0.016"/>
   </group_state>
 
   <!-- Gripper Closed -->
   <group_state name="closed" group="gripper">
     <joint name="gripper_left_joint" value="0.012"/>
-    <joint name="gripper_right_joint" value="0.012"/>
   </group_state>
 
   <!-- ============================================ -->
