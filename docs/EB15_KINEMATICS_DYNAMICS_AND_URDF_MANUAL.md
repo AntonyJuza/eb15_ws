@@ -16,6 +16,7 @@
 2. [Denavit-Hartenberg (DH) Parameter Formulation](#2-denavit-hartenberg-dh-parameter-formulation)
 3. [Forward Kinematics (FK) Algebraic Derivation](#3-forward-kinematics-fk-algebraic-derivation)
 4. [Analytical Inverse Kinematics (IK) Step-by-Step Derivation](#4-analytical-inverse-kinematics-ik-step-by-step-derivation)
+   - [Practical Testing: How to Test Inverse Kinematics (IK) for a Fixed TCP](#practical-testing-how-to-test-inverse-kinematics-ik-for-a-fixed-tcp)
 5. [Differential Kinematics & Geometric Jacobian](#5-differential-kinematics--geometric-jacobian)
 6. [Robot Dynamics: Euler-Lagrange Formulation](#6-robot-dynamics-euler-lagrange-formulation)
 7. [URDF Architecture & Link-by-Link Deep Dive](#7-urdf-architecture--link-by-link-deep-dive)
@@ -517,6 +518,70 @@ For the gripper, the stroke $S \in [0, 28\,\text{mm}]$ maps linearly to the pris
 $$
 q_{\text{grip}} = -0.016 + \frac{S}{28} \cdot 0.028\,\text{m}
 $$
+
+---
+
+### Practical Testing: How to Test Inverse Kinematics (IK) for a Fixed TCP
+
+Testing Inverse Kinematics with a fixed End-Effector / Tool Center Point (TCP) requires understanding the **degrees of freedom constraint**:
+* A full 6-DOF Cartesian pose specifies 3 positions $(x,y,z)$ and 3 orientations $(\text{roll}, \text{pitch}, \text{yaw})$.
+* The EB-15 arm chain (`base_link` $\to$ `tool0`) possesses **4 active revolute joints**.
+* Consequently, the pitch orientation of the tool is kinematically determined by the elevation angles of the shoulder and elbow ($q_2 + q_3$). If an IK solver is commanded to satisfy an arbitrary 6-DOF orientation that contradicts this coupling, standard solvers will return `NO_IK_SOLUTION` (Error Code: `-31`).
+* To test IK properly for a fixed TCP, use one of the methods below:
+
+#### Method 1: Interactive GUI Testing in RViz 2 (Live Visual Feedback)
+1. **Launch the MoveIt digital twin:**
+   ```bash
+   ros2 launch eb15_moveit_config demo.launch.py
+   ```
+2. **Configure the Planning Display:**
+   * In RViz, expand the **MotionPlanning** display on the left sidebar.
+   * Under the **Planning** tab, set **Planning Group** to `arm`.
+   * **Crucial Step:** Check the box **"Approximate IK Solutions"**. This instructs MoveIt's KDL plugin to lock onto the desired $(X, Y, Z)$ TCP position while relaxing over-constrained orientation axes.
+3. **Manipulate the Interactive TCP Marker:**
+   * Under **Planning Request**, check **"Query Goal State"**.
+   * An interactive 6-DOF marker (colored rings and translational arrows) appears centered at `tool0` / TCP.
+   * Drag the translational arrows: MoveIt computes the IK in real-time, displaying the orange ghost arm moving to match the TCP coordinate.
+   * Click **"Plan & Execute"** to stream the motion trajectory to the physical robot via the Arduino serial bridge.
+
+#### Method 2: Testing via the Built-In CLI Test Bench (`test_ik`)
+A dedicated IK test utility is included in `eb15_driver` that solves the analytical IK, validates it against Forward Kinematics ($< 0.0001\,\text{mm}$ error), verifies it against MoveIt's `/compute_ik` service, and displays the corresponding Arduino serial `$CMD`:
+
+```bash
+# Test target TCP at X=0.200m, Y=0.150m, Z=0.250m
+ros2 run eb15_driver test_ik 0.200 0.150 0.250
+
+# Test with a specific wrist roll and publish to the live robot:
+ros2 run eb15_driver test_ik 0.250 0.000 0.200 --roll 0.0 --publish
+```
+
+**Sample Output:**
+```text
+=================================================================
+       EB-15 INVERSE KINEMATICS (IK) TEST BENCH
+=================================================================
+Target Tool0 Position: X = 0.2000 m, Y = 0.1500 m, Z = 0.2500 m
+Target Wrist Roll:     0.0000 rad (0.0°)
+Kinematic Branch:      Elbow-Up
+-----------------------------------------------------------------
+Computed Joint Angles:
+  joint1      :  +0.6435 rad  ( +36.87°)  [OK]
+  joint2      :  +0.0467 rad  (  +2.68°)  [OK]
+  joint3      :  -1.8128 rad  (-103.87°)  [OK]
+  wrist_joint :  -0.6435 rad  ( -36.87°)  [OK]
+-----------------------------------------------------------------
+Forward Kinematics Position Check:
+  Calculated: X = 0.2000 m, Y = 0.1500 m, Z = 0.2500 m
+  Position Error: 0.000000 mm
+Arduino Serial Protocol Command:
+  $CMD,0.6435,0.0467,-1.8128,-0.6435,0.0000\n
+=================================================================
+--- Verifying with MoveIt 2 Kinematics Services ---
+MoveIt /compute_ik Status: SUCCESS (Error Code: 1)
+```
+
+#### Method 3: Testing MoveIt's `/compute_ik` ROS 2 Service Programmatically
+You can invoke the `/compute_ik` service directly using the `GetPositionIK` service type with a `geometry_msgs/msg/PoseStamped` for `tool0`. Ensure `ik_request.avoid_collisions = True` to verify obstacle clearance in your scene.
 
 ---
 

@@ -70,6 +70,12 @@ def generate_launch_description():
         description='UDP port on which Unity is listening'
     )
 
+    feedback_mode_arg = DeclareLaunchArgument(
+        'feedback_mode',
+        default_value='false',
+        description='Mirror physical AS5600 encoders in RViz (true) or follow commanded setpoints (false)'
+    )
+
     # ── CycloneDDS RMW for reliable ROS 2 Jazzy message delivery ──
     set_rmw_env = SetEnvironmentVariable(
         name="RMW_IMPLEMENTATION",
@@ -121,7 +127,7 @@ def generate_launch_description():
         parameters=[{
             "serial_port": LaunchConfiguration("serial_port"),
             "baud_rate": LaunchConfiguration("baud_rate"),
-            "feedback_mode": False,
+            "feedback_mode": LaunchConfiguration("feedback_mode"),
         }],
     )
 
@@ -195,6 +201,7 @@ def generate_launch_description():
         unity_arg,
         unity_ip_arg,
         unity_port_arg,
+        feedback_mode_arg,
         set_rmw_env,
         robot_state_publisher_node,
         eb15_driver_node,

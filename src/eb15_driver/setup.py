@@ -25,6 +25,7 @@ setup(
             'eb15_serial_node = eb15_driver.eb15_serial_node:main',
             'unity_bridge_node = eb15_driver.unity_bridge_node:main',
             'run_sequence = eb15_driver.run_sequence:main',
+            'test_ik = eb15_driver.test_ik:main',
         ],
     },
 )

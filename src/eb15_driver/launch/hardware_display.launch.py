@@ -47,6 +47,12 @@ def generate_launch_description():
         description='UDP port on which Unity is listening'
     )
 
+    feedback_mode_arg = DeclareLaunchArgument(
+        'feedback_mode',
+        default_value='true',
+        description='Enable physical encoder mirroring (default: true for hardware display)'
+    )
+
     # CycloneDDS environment variable to avoid FastCDR issues on ROS 2 Jazzy
     set_rmw_env = SetEnvironmentVariable(
         name='RMW_IMPLEMENTATION',
@@ -71,6 +77,7 @@ def generate_launch_description():
         parameters=[{
             'serial_port': LaunchConfiguration('serial_port'),
             'baud_rate': LaunchConfiguration('baud_rate'),
+            'feedback_mode': LaunchConfiguration('feedback_mode'),
             'joint_names': ['joint1', 'joint2', 'joint3', 'wrist_joint', 'gripper_left_joint'],
         }]
     )
@@ -104,6 +111,7 @@ def generate_launch_description():
         unity_arg,
         unity_ip_arg,
         unity_port_arg,
+        feedback_mode_arg,
         set_rmw_env,
         robot_state_publisher_node,
         eb15_driver_node,
