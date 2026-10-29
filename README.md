@@ -8,6 +8,10 @@
 
 A complete hardware-in-the-loop robotics stack for the **EB-15 3D-printed collaborative robotic arm** (ToolBoxRobotics design). This workspace contains the mechanical description (URDF/Xacro), kinematic modeling, RViz digital twin visualization, ROS 2 driver nodes, and embedded Arduino firmware for multi-axis closed-loop motion and automated limit switch calibration.
 
+> [!TIP]
+> **Theory & Educational Manual:**  
+> For complete mathematical derivations (Forward Kinematics, Denavit-Hartenberg parameters, Analytical Inverse Kinematics, Geometric Jacobian & Singularities, Euler-Lagrange Dynamics, and URDF architecture walkthrough), see [**`docs/EB15_KINEMATICS_DYNAMICS_AND_URDF_MANUAL.md`**](file:///home/juza/eb15_ws/docs/EB15_KINEMATICS_DYNAMICS_AND_URDF_MANUAL.md).
+
 ---
 
 ## Table of Contents
