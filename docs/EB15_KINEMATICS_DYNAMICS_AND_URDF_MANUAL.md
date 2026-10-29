@@ -34,22 +34,21 @@ The technical blueprint below illustrates the official orthographic engineering 
 
 ![EB15 Robo Arm - 6 DOF (Flipped Wrist) Blueprint](eb15_blueprint_drawing.jpg)
 
-#### Dimensional Specifications from the Official Blueprint:
+#### Dimensional Specifications from the Official Blueprint (Corrected to CAD Spec):
 * **Base Diameter:** $\varnothing 140\,\text{mm}$ circular mounting base footprint.
-* **Base Column Elevation ($L_1$):** $110\,\text{mm}$ (Mounting flange to Shoulder pitch axis $J_2$).
-* **Upper Arm Length ($L_2$):** $155\,\text{mm}$ (Shoulder pitch axis $J_2$ to Elbow pitch axis $J_3$).
-* **Forearm Link Length ($L_3$):** $135\,\text{mm}$ (Elbow pitch axis $J_3$ to Flipped Wrist pitch pivot).
-* **Wrist & Tool Module Length ($L_1$):** $110\,\text{mm}$ (Wrist pivot to gripper tip interface).
-* **Total Arm Candle Height:** $420\,\text{mm}$ (Fully extended vertical reference configuration).
+* **Base Column Elevation ($d_{\text{base}}$):** $73.8\,\text{mm}$ ($d_1 = 30.8\,\text{mm} + h_1 = 43.0\,\text{mm}$ to Shoulder pitch axis $J_2$).
+* **Upper Arm Length ($L_2$):** $228\,\text{mm}$ (Shoulder pitch axis $J_2$ to Elbow pitch axis $J_3$).
+* **Forearm Link Length ($L_3$):** $265.7\,\text{mm}$ ($L_3 = 178\,\text{mm} + L_4 = 87.7\,\text{mm}$ Elbow pitch axis to Flipped Wrist pivot).
+* **Total Arm Candle Height:** $656\,\text{mm}$ ($73.8 + 228 + 265.7 + 88.5\,\text{mm}$ with end-effector in vertical posture).
 * **Joint Offsets & Standoffs (Side Elevation View):**
-  - Base vertical riser: $75\,\text{mm}$.
-  - Upper arm lateral standoff: $75\,\text{mm}$.
-  - Forearm to wrist standoff: $75\,\text{mm}$.
+  - Base vertical riser: $83.8\,\text{mm}$.
+  - Upper arm lateral standoff: $83.8\,\text{mm}$.
+  - Forearm to wrist standoff: $83.8\,\text{mm}$.
 
 #### Joint Rotation Limits (6-Axis Articulated Design):
 * **Base Joint $J_1$ (Pan / Yaw):** $360^\circ$ continuous rotation around the vertical base axis.
-* **Shoulder Joint $J_2$ (Pitch):** $-60^\circ \text{ to } +120^\circ$ ($180^\circ$ total elevation stroke).
-* **Elbow Joint $J_3$ (Pitch):** $\pm 140^\circ$ ($280^\circ$ total bending range).
+* **Shoulder Joint $J_2$ (Pitch):** $-90^\circ \text{ to } +90^\circ$ ($180^\circ$ total elevation stroke).
+* **Elbow Joint $J_3$ (Pitch):** $\pm 155^\circ$ ($310^\circ$ total bending range matching microswitches).
 * **Forearm Roll $J_4$:** Continuous axial twist along the forearm tube.
 * **Flipped Wrist Pitch $J_5$:** $\pm 90^\circ$ ($180^\circ$ tilt range).
 * **Flipped Wrist Yaw / Roll $J_6$:** $360^\circ$ continuous tool spin.
@@ -59,7 +58,7 @@ The technical blueprint below illustrates the official orthographic engineering 
 As highlighted in the blueprint's **Top View**, the arm utilizes a **Differential Flipped Wrist** configuration:
 1. **Kinematic Decoupling:** Separates tool roll/pitch from arm positioning, eliminating wrist singularities encountered in standard spherical wrists when pointing straight down.
 2. **Mass Centering (Inertia Reduction):** The motors driving the wrist joints are mounted further back along the forearm rather than at the distal tip. This minimizes the moment of inertia about Shoulder $J_2$ and Elbow $J_3$, enabling faster dynamic response and dramatically reducing gravity torque loading on the EBA-17 gearboxes.
-3. **Planar Symmetry:** The $75\,\text{mm}$ side standoffs mirror each other, maintaining an invariant central sagittal plane for pick-and-place tasks.
+3. **Planar Symmetry:** The $83.8\,\text{mm}$ side standoffs mirror each other, maintaining an invariant central sagittal plane for pick-and-place tasks.
 
 ---
 
@@ -327,18 +326,18 @@ Taking the reference pose at **vertical candle pose** ($q = [0, 0, 0, 0]^T$):
 
 ### EB-15 6-DOF (Flipped Wrist) DH Parameter Table
 
-For the **6-DOF Flipped Wrist architecture** specified in the engineering blueprint ($L_1 = 0.110\,\text{m}, L_2 = 0.155\,\text{m}, L_3 = 0.135\,\text{m}, L_{\text{wrist}} = 0.110\,\text{m}$):
+For the **6-DOF Flipped Wrist architecture** updated to the real CAD dimensions ($d_{\text{base}} = 0.0738\,\text{m}, a_2 = 0.228\,\text{m}, a_3 = 0.2657\,\text{m}, L_{\text{wrist}} = 0.0885\,\text{m}$):
 
 | Link $i$ | Joint Variable | $\theta_i$ | $d_i$ (m) | $a_i$ (m) | $\alpha_i$ (rad) | Range (from Blueprint) |
 |---|---|---|---|---|---|---|
-| **1** (Base Pan) | $q_1$ | $q_1$ | $L_1 = 0.110$ | $0$ | $+\pi/2$ | $360^\circ$ ($[-\pi, +\pi]$) |
-| **2** (Shoulder Pitch) | $q_2$ | $q_2 + \pi/2$ | $0$ | $L_2 = 0.155$ | $0$ | $-60^\circ \text{ to } +120^\circ$ |
-| **3** (Elbow Pitch) | $q_3$ | $q_3$ | $0$ | $L_3 = 0.135$ | $+\pi/2$ | $\pm 140^\circ$ |
+| **1** (Base Pan) | $q_1$ | $q_1$ | $d_{\text{base}} = 0.0738$ | $0$ | $+\pi/2$ | $360^\circ$ ($[-\pi, +\pi]$) |
+| **2** (Shoulder Pitch) | $q_2$ | $q_2 + \pi/2$ | $0$ | $a_2 = 0.2280$ | $0$ | $-90^\circ \text{ to } +90^\circ$ |
+| **3** (Elbow Pitch) | $q_3$ | $q_3$ | $0$ | $a_3 = 0.2657$ | $+\pi/2$ | $\pm 155^\circ$ ($[-2.70, +2.70]$) |
 | **4** (Forearm Roll) | $q_4$ | $q_4$ | $0$ | $0$ | $-\pi/2$ | $360^\circ$ |
 | **5** (Wrist Pitch) | $q_5$ | $q_5$ | $0$ | $0$ | $+\pi/2$ | $\pm 90^\circ$ |
-| **6** (Wrist Roll / Tool) | $q_6$ | $q_6$ | $L_{\text{wrist}} = 0.110$ | $0$ | $0$ | $360^\circ$ |
+| **6** (Wrist Roll / Tool) | $q_6$ | $q_6$ | $L_{\text{wrist}} = 0.0885$ | $0$ | $0$ | $360^\circ$ |
 
-*Total vertical candle height:* $Z_{\text{total}} = d_1 + a_2 + a_3 + d_6 = 0.110 + 0.155 + 0.135 + 0.110 = \mathbf{0.510\,\text{m}}$ (with tool, or $420\,\text{mm}$ to wrist frame as dimensioned on the blueprint).*
+*Total vertical candle height:* $Z_{\text{total}} = d_1 + a_2 + a_3 + d_6 = 0.0738 + 0.2280 + 0.2657 + 0.0885 = \mathbf{0.6560\,\text{m}}$ ($656\,\text{mm}$ to grasp center).*
 
 ---
 
