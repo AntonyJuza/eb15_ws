@@ -805,8 +805,10 @@ void jogStepper(uint8_t joint, int steps, uint8_t dir) {
 
 void setup() {
   Serial.begin(115200);
+  Serial.setTimeout(5); // Non-blocking serial timeout
   Wire.begin();
   Wire.setClock(400000);
+  Wire.setWireTimeout(25000, true); // Auto-recover from I2C bus noise/transients
 
   pinMode(SHOULDER_LIMIT_MIN_PIN, INPUT_PULLUP);
   pinMode(SHOULDER_LIMIT_MAX_PIN, INPUT_PULLUP);

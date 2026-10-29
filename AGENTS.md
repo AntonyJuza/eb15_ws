@@ -11,7 +11,7 @@ This document provides developer and AI agent guidelines, architecture details, 
 | **`eb15_description`** | `src/eb15_description` | Modular URDF/XACRO model, STL meshes, materials, and joint limit specifications. |
 | **`eb15_driver`** | `src/eb15_driver` | Hardware communication layer: `eb15_serial_node` (USB serial bridge to Arduino Nano) and `unity_bridge_node` (UDP digital twin). |
 | **`eb15_moveit_config`**| `src/eb15_moveit_config`| MoveIt 2 configuration, kinematics (KDL), OMPL motion planning pipeline, SRDF semantic models, and RViz display profiles. |
-| **`firmware`** | `firmware/` | Microcontroller firmware for Arduino Nano (`eb15_arduino.ino`), AS5600 multi-turn magnetic encoder drivers, and limit switch homing routines. |
+| **`firmware`** | `firmware/` | Microcontroller firmware for Arduino Nano: `eb15_arduino.ino` (main driver with synchronized scissor homing) and `eb15_full_arm_calibration.ino` (standalone calibration & diagnostics with identical ROS 2 motion protocol). |
 
 ---
 
